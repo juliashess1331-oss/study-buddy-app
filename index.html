@@ -24,5 +24,11 @@ input,select{font:inherit;font-size:30px;width:100%;padding:10px;border-radius:1
 .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.key{font-size:30px;background:#ffd23f}
 .top{display:flex;justify-content:space-between;font-size:22px;font-weight:bold}.err{color:#c00;text-align:center}
 .parent{margin-top:30px;opacity:.8}
+.ans.correct,input.correct{background:#7bd389!important;color:#0b3d17;outline:4px solid #2e9e4a}
+.ans.wrong,input.wrong{background:#ff9b9b!important;color:#5a0000;outline:4px solid #d33}
+.ans:disabled{opacity:1}.ans:disabled:not(.correct):not(.wrong){opacity:.55}
+.fb{min-height:60px;text-align:center}.fb.right{color:#1d7a36}.fb.wrong{color:#a33}
+.q{white-space:normal}.ctx{font-size:22px}.step{text-align:center;font-weight:bold;color:#6c4cf1}
+label{display:block;margin:8px 0}summary{font-size:22px;cursor:pointer}.word small{color:#555}
 </style></head><body><main id="app"></main>
 <script src="content.js"></script><script src="app.js"></script></body></html>
