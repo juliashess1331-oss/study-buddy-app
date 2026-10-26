@@ -130,7 +130,8 @@ function runPart(d,s,i,att){const P=parts(d,s,att)[i],qs=flatQs(P);let idx=0,rig
     if(q.ctx)x+=`<div class="card ctx">${esc(q.ctx)}</div><p class="step">${q.step}</p>`;
     x+=`<p class="huge q">${esc(q.q).replace(/\n/g,"<br>")}</p>`;
     x+=q.ch?q.ch.map((c,k)=>`<button class="ans" data-k="${k}">${esc(c)}</button>`).join(""):`<input id="inp" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Your answer" readonly><div class="pad">${[1,2,3,4,5,6,7,8,9,"⌫",0,"✔"].map(k=>`<button class="key" data-key="${k}">${k}</button>`).join("")}</div>`;
-    h(x+`<div id="fb" class="fb" aria-live="polite"></div>`);
+    padReset();const qText=(q.ctx?q.ctx+"\n":"")+q.q;
+    h(x+`<button class="spbtn" id="sp">✏️ Scratch Paper</button><div id="fb" class="fb" aria-live="polite"></div>`);$("#sp").onclick=()=>padOpen(qText);
     const respond=(resp,btn)=>{if(done)return;done=true;const ok=grade(q,resp);if(ok)right++;$("#score").textContent="✅ "+right;
       $$("button.ans,button.key").forEach(b=>b.disabled=true);
       if(q.ch){$$("button.ans")[q.a].classList.add("correct");if(!ok&&btn)btn.classList.add("wrong")}else $("#inp").classList.add(ok?"correct":"wrong");
@@ -139,7 +140,7 @@ function runPart(d,s,i,att){const P=parts(d,s,att)[i],qs=flatQs(P);let idx=0,rig
       if(ok)setTimeout(()=>{idx++;ask()},800);else $("#nx").onclick=()=>{idx++;ask()}};
     if(q.ch)$$(".ans").forEach(b=>b.onclick=()=>respond(b.dataset.k,b));
     else{const inp=$("#inp");$$(".key").forEach(b=>b.onclick=()=>{const k=b.dataset.key;if(k==="⌫")inp.value=inp.value.slice(0,-1);else if(k==="✔"){if(inp.value!=="")respond(inp.value)}else if(inp.value.length<6)inp.value+=k})}};
-  const finish=(r,n)=>{CUR=null;const pct=n?r/n:0;
+  const finish=(r,n)=>{CUR=null;padReset();const pct=n?r/n:0;
     if(pct>=PASS){const st=pct===1?3:pct>=.9?2:1;S.stars+=st;markPart(d,s,i);reward(st,d,s,r,n)}
     else{h(`<h1 class="retry">${RETRY[att%RETRY.length]}</h1><p class="big" id="result">You got ${r} of ${n}. You need ${Math.ceil(n*PASS-1e-9)} to pass.</p><button class="go" id="retry">Try again 🔁</button><button class="small" id="back">⬅ Back</button>`);$("#retry").onclick=()=>runPart(d,s,i,att+1);$("#back").onclick=()=>dayView(d)}};
   intro()}
@@ -149,6 +150,38 @@ function reward(st,d,s,r,n){const g=Math.floor(Math.random()*3);let game="",wire
   else{const T=rnd(STORIES);game=`<div class="card"><h2>📝 Finish the silly story!</h2><p class="big">${T[0]}</p>${T[1].map(c=>`<button class="ans ss">${c}</button>`).join("")}<p id="ra" class="big"></p></div>`;wire=()=>$$(".ss").forEach(b=>b.onclick=()=>$("#ra").textContent=T[0].replace("___",b.textContent)+" 😂")}
   h(`<h1 class="passed">${rnd(PRAISE)}</h1><p class="huge">${"⭐".repeat(st)}</p><p class="big" id="result">${n>1?`You got ${r} of ${n} right!`:"Great reading!"}</p>${blockDone(d,s)?`<p class="big">🏆 ${s==="reading"?"Reading":"Math"} block done!</p>`:""}${game}<button class="go" id="next">Keep going ➡️</button>`);
   wire();$("#next").onclick=()=>dayView(d)}
+
+// ---------- scratch paper (drawing never touches grading or progress) ----------
+const PAD={strokes:[],redo:[],color:"#222",size:4,erase:false,bg:"plain",cur:null};
+const PADCOLORS=[["#222","Black"],["#1f6fe5","Blue"],["#e03131","Red"],["#2f9e44","Green"]],PADSIZES=[[3,"Thin"],[6,"Medium"],[12,"Thick"]];
+function padInit(){if($("#pad"))return;const d=document.createElement("div");d.id="pad";d.hidden=true;d.setAttribute("role","dialog");d.setAttribute("aria-label","Scratch paper");
+  d.innerHTML=`<div id="padtop"><p id="padq"></p><button id="pdclose" class="close" aria-label="Close scratch paper">✖ Close</button></div><div id="padbar"><button id="pdpen" class="on" aria-label="Pen">✏️</button><button id="pderase" aria-label="Eraser">🧽</button>${PADCOLORS.map((c,i)=>`<button class="sw pcol ${i?"":"on"}" data-c="${c[0]}" aria-label="${c[1]} pen" style="background:${c[0]}"></button>`).join("")}${PADSIZES.map((z,i)=>`<button class="psz ${i?"":"on"}" data-z="${z[0]}" aria-label="${z[1]} pen"><span style="display:inline-block;width:${z[0]+4}px;height:${z[0]+4}px;border-radius:50%;background:#222;vertical-align:middle"></span></button>`).join("")}<button id="pdundo" aria-label="Undo">↩️</button><button id="pdredo" aria-label="Redo">↪️</button><button id="pdbg" aria-label="Paper style">📄</button><button id="pdclear" aria-label="Clear all">🗑️</button></div><div id="padwrap"><canvas id="padc"></canvas></div>`;
+  document.body.appendChild(d);const c=$("#padc"),w=$("#padwrap");
+  const pt=e=>{const r=c.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]};
+  c.addEventListener("pointerdown",e=>{e.preventDefault();c.setPointerCapture&&c.setPointerCapture(e.pointerId);PAD.cur={c:PAD.color,s:PAD.erase?PAD.size*3:PAD.size,e:PAD.erase,p:[pt(e)]};PAD.strokes.push(PAD.cur);PAD.redo=[];padDraw();padBtns()});
+  c.addEventListener("pointermove",e=>{if(!PAD.cur)return;e.preventDefault();const ev=e.getCoalescedEvents?e.getCoalescedEvents():[e];(ev.length?ev:[e]).forEach(x=>PAD.cur.p.push(pt(x)));padDraw()});
+  const end=()=>{PAD.cur=null};["pointerup","pointercancel","pointerleave"].forEach(t=>c.addEventListener(t,end));
+  ["touchstart","touchmove","gesturestart"].forEach(t=>d.addEventListener(t,e=>{if(e.target===c||t==="gesturestart")e.preventDefault()},{passive:false}));
+  $("#pdpen").onclick=()=>{PAD.erase=false;padBtns()};$("#pderase").onclick=()=>{PAD.erase=true;padBtns()};
+  $$(".pcol").forEach(b=>b.onclick=()=>{PAD.color=b.dataset.c;PAD.erase=false;padBtns()});$$(".psz").forEach(b=>b.onclick=()=>{PAD.size=+b.dataset.z;padBtns()});
+  $("#pdundo").onclick=()=>{if(PAD.strokes.length){PAD.redo.push(PAD.strokes.pop());padDraw();padBtns()}};
+  $("#pdredo").onclick=()=>{if(PAD.redo.length){PAD.strokes.push(PAD.redo.pop());padDraw();padBtns()}};
+  $("#pdbg").onclick=()=>{PAD.bg={plain:"lined",lined:"grid",grid:"plain"}[PAD.bg];w.className=PAD.bg==="plain"?"":PAD.bg;padBtns()};
+  $("#pdclear").onclick=()=>{if(!PAD.strokes.length||$("#padconfirm"))return;const k=document.createElement("div");k.id="padconfirm";k.innerHTML=`Erase the whole page? 🧹<br><button id="pdyes">Yes, clear it</button><button id="pdno">No, keep it</button>`;w.appendChild(k);
+    $("#pdyes").onclick=()=>{PAD.strokes=[];PAD.redo=[];k.remove();padDraw();padBtns()};$("#pdno").onclick=()=>k.remove()};
+  $("#pdclose").onclick=padClose;
+  const rs=()=>{if(!d.hidden)padSize()};window.addEventListener("resize",rs);window.addEventListener("orientationchange",()=>setTimeout(rs,250))}
+function padSize(){const c=$("#padc"),r=c.getBoundingClientRect(),dpr=window.devicePixelRatio||1;c.width=Math.max(1,Math.round(r.width*dpr));c.height=Math.max(1,Math.round(r.height*dpr));padDraw()}
+function padDraw(){const c=$("#padc");if(!c)return;const x=c.getContext("2d"),dpr=c.width/(c.getBoundingClientRect().width||1);x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,c.width,c.height);x.setTransform(dpr,0,0,dpr,0,0);x.lineCap=x.lineJoin="round";
+  for(const s of PAD.strokes){x.globalCompositeOperation=s.e?"destination-out":"source-over";x.strokeStyle=x.fillStyle=s.c;x.lineWidth=s.s;const p=s.p;
+    if(p.length===1){x.beginPath();x.arc(p[0][0],p[0][1],s.s/2,0,7);x.fill();continue}
+    x.beginPath();x.moveTo(p[0][0],p[0][1]);for(let i=1;i<p.length-1;i++){x.quadraticCurveTo(p[i][0],p[i][1],(p[i][0]+p[i+1][0])/2,(p[i][1]+p[i+1][1])/2)}x.lineTo(p[p.length-1][0],p[p.length-1][1]);x.stroke()}
+  x.globalCompositeOperation="source-over"}
+function padBtns(){$("#pdpen").classList.toggle("on",!PAD.erase);$("#pderase").classList.toggle("on",PAD.erase);$$(".pcol").forEach(b=>b.classList.toggle("on",!PAD.erase&&b.dataset.c===PAD.color));$$(".psz").forEach(b=>b.classList.toggle("on",+b.dataset.z===PAD.size));
+  $("#pdundo").disabled=!PAD.strokes.length;$("#pdredo").disabled=!PAD.redo.length;$("#pdclear").disabled=!PAD.strokes.length;$("#pdbg").textContent={plain:"📄",lined:"📝",grid:"🔲"}[PAD.bg]}
+function padOpen(qText){padInit();$("#padq").textContent=qText;$("#pad").hidden=false;document.body.classList.add("padopen");padSize();padBtns()}
+function padClose(){const d=$("#pad");if(!d)return;d.hidden=true;document.body.classList.remove("padopen");const k=$("#padconfirm");if(k)k.remove()}
+function padReset(){PAD.strokes=[];PAD.redo=[];PAD.cur=null;padClose();padDraw()}
 // ---------- parent ----------
 function setupPin(){h(`<h1>Welcome, grown-up! 👋</h1><div class="card"><p>Please set a 4–6 digit parent passcode. You'll need it to open settings, reset progress, or unlock days. It is stored only as a scrambled hash on this device.</p><form><input id="p1" type="password" inputmode="numeric" maxlength="6" placeholder="Passcode" autocomplete="off"><input id="p2" type="password" inputmode="numeric" maxlength="6" placeholder="Type it again" autocomplete="off"></form><p id="pe" class="err"></p><button class="go" id="ok">Save passcode</button></div>`);
   $("#ok").onclick=async()=>{const a=$("#p1").value,b=$("#p2").value;if(!/^\d{4,6}$/.test(a))return $("#pe").textContent="Please use 4 to 6 digits.";if(a!==b)return $("#pe").textContent="Those don't match. Try again.";S.hash=await hash(a);save();home()}}

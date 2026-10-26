@@ -30,5 +30,23 @@ input,select{font:inherit;font-size:30px;width:100%;padding:10px;border-radius:1
 .fb{min-height:60px;text-align:center}.fb.right{color:#1d7a36}.fb.wrong{color:#a33}
 .q{white-space:normal}.ctx{font-size:22px}.step{text-align:center;font-weight:bold;color:#6c4cf1}
 label{display:block;margin:8px 0}summary{font-size:22px;cursor:pointer}.word small{color:#555}
+
+.spbtn{display:block;width:100%;margin:10px 0;padding:14px;font-size:1.25rem;font-weight:700;border:3px dashed #7c5cff;border-radius:16px;background:#f4f0ff;color:#4b2fd1}
+#pad{position:fixed;inset:0;z-index:50;background:#fff;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);overscroll-behavior:none}
+#pad[hidden]{display:none}
+#padq{margin:0;padding:8px 12px;font-size:1.1rem;font-weight:700;background:#fff7d6;border-bottom:2px solid #f0d97a;max-height:22vh;overflow:auto;white-space:pre-line}
+#padbar{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;padding:6px 8px;align-items:center;background:#f6f6fb;border-bottom:1px solid #ddd}
+#padbar button{min-width:44px;min-height:44px;font-size:1.2rem;border:2px solid #ccc;border-radius:12px;background:#fff;padding:0 8px}
+#padbar button.on{border-color:#4b2fd1;background:#ebe5ff}
+#padbar button:disabled{opacity:.35}
+#padbar .sw{width:44px;border-radius:50%}
+#padtop{display:flex;align-items:flex-start;background:#fff7d6;border-bottom:2px solid #f0d97a}#padtop #padq{flex:1;border:0}#padtop .close{flex:none;margin:6px;min-height:44px;font-size:1.1rem;padding:0 12px;border-radius:12px;background:#ffe3e3;border:2px solid #f99;font-weight:700}
+#padwrap{flex:1;position:relative;touch-action:none;background:#fff}
+#padwrap.lined{background:repeating-linear-gradient(#fff 0 31px,#b9d3f5 31px 32px)}
+#padwrap.grid{background-color:#fff;background-image:linear-gradient(#cfe0f7 1px,transparent 1px),linear-gradient(90deg,#cfe0f7 1px,transparent 1px);background-size:28px 28px}
+#padc{position:absolute;inset:0;width:100%;height:100%;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#padconfirm{position:absolute;left:50%;top:30%;transform:translateX(-50%);background:#fff;border:3px solid #4b2fd1;border-radius:18px;padding:16px;text-align:center;font-size:1.2rem;font-weight:700;box-shadow:0 6px 24px #0003}
+#padconfirm button{min-height:48px;font-size:1.1rem;margin:8px 4px 0;padding:0 16px;border-radius:12px;border:2px solid #ccc;background:#fff}
+body.padopen{overflow:hidden;position:fixed;width:100%}
 </style></head><body><main id="app"></main>
 <script src="content.js"></script><script src="app.js"></script></body></html>
