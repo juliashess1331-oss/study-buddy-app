@@ -1,0 +1,28 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Study Buddy"><meta name="theme-color" content="#6c4cf1">
+<link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icons/icon-180.png"><link rel="icon" href="icons/icon-192.png">
+<title>Study Buddy</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:"Comic Sans MS","Chalkboard SE",system-ui,sans-serif;background:#fff8e7;color:#222;font-size:20px;line-height:1.5;padding:env(safe-area-inset-top) 12px 40px;-webkit-user-select:none;user-select:none}
+#app{max-width:640px;margin:auto}
+h1{color:#6c4cf1;text-align:center;font-size:32px}h2{margin:.2em 0}
+.big{font-size:24px;text-align:center}.huge{font-size:30px;text-align:center;font-weight:bold}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+button{font:inherit;border:0;border-radius:18px;min-height:64px;cursor:pointer}
+.day{background:#ffd23f;font-size:20px;padding:8px}.day.done{background:#7bd389}.day[disabled]{background:#ddd;color:#888}
+.part,.ans,.go{display:block;width:100%;margin:10px 0;padding:14px;font-size:24px;background:#4cc9f0;color:#08263a}
+.part.done{background:#7bd389}.part[disabled]{background:#ddd;color:#888}
+.go{background:#6c4cf1;color:#fff;font-size:28px}
+.small{display:block;width:100%;margin:10px 0;background:#e0d7ff;font-size:20px}.danger{background:#ffb3b3}
+.card{background:#fff;border-radius:18px;padding:14px;margin:12px 0;box-shadow:0 3px 0 #0001}
+.passage p{font-size:24px;line-height:1.7}
+input,select{font:inherit;font-size:30px;width:100%;padding:10px;border-radius:14px;border:3px solid #6c4cf1;text-align:center;margin:6px 0}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.key{font-size:30px;background:#ffd23f}
+.top{display:flex;justify-content:space-between;font-size:22px;font-weight:bold}.err{color:#c00;text-align:center}
+.parent{margin-top:30px;opacity:.8}
+</style></head><body><main id="app"></main>
+<script src="content.js"></script><script src="app.js"></script></body></html>
