@@ -44,23 +44,31 @@ function readingParts(day,att){
   P.push({name:"Quick Read 🎤",intro:"Read this sentence out loud with your best expression. (Just one!)",fluency:FLUENCY[(day-1)%FLUENCY.length]});
   return P}
 // ---------- math ----------
+const FX=[0,1,2,3,4,5,10],DV=[1,2,3,4,5,10];
 function factQ(r){const t=ri(r,0,9);
-  if(t<5){const a=ri(r,0,12),b=ri(r,0,12);return num(`${a} × ${b} = ?`,a*b)}
-  if(t<8){const b=ri(r,1,10),c=ri(r,0,10);return num(`${b*c} ÷ ${b} = ?`,c)}
+  if(t<4){const a=pickOne(r,FX),b=ri(r,0,10);return ri(r,0,1)?num(`${a} × ${b} = ?`,a*b):num(`${b} × ${a} = ?`,a*b)}
+  if(t<7){const b=pickOne(r,DV),c=ri(r,0,Math.min(10,Math.floor(50/b)));return num(`${b*c} ÷ ${b} = ?`,c)}
   if(t<9){const a=ri(r,6,12),b=ri(r,5,12);return num(`${a} + ${b} = ?`,a+b)}
   const a=ri(r,11,20),b=ri(r,3,a-1);return num(`${a} − ${b} = ?`,a-b)}
-function regroupQ(r,k){
-  if(k===0){let a,b;do{a=ri(r,15,89);b=ri(r,12,89)}while((a%10)+(b%10)<10||a+b>180);return num(`${a} + ${b} = ?`,a+b)}
-  if(k===1){let a,b;do{a=ri(r,120,689);b=ri(r,115,299)}while((a%10)+(b%10)<10);return num(`${a} + ${b} = ?`,a+b)}
-  if(k===2){let a,b;do{a=ri(r,31,98);b=ri(r,12,a-5)}while(a%10>=b%10);return num(`${a} − ${b} = ?`,a-b)}
-  let a,b;do{a=ri(r,302,950);b=ri(r,118,a-50)}while(a%10>=b%10);return num(`${a} − ${b} = ?`,a-b)}
-function multQ(r,k){if(k%2===0){const a=ri(r,12,49),b=ri(r,2,6);return num(`${a} × ${b} = ?`,a*b)}const a=ri(r,3,9),b=ri(r,2,9)*10;return num(`${a} × ${b} = ?`,a*b)}
+const dg=(n,i)=>Math.floor(n/10**i)%10;
+function regroupQ(r,k){let a,b,c;
+  if(k===0){do{a=ri(r,120,789);b=ri(r,115,199)}while(dg(a,0)+dg(b,0)<10||dg(a,1)+dg(b,1)<9);return num(`${a} + ${b} = ?`,a+b)}
+  if(k===1){do{a=ri(r,1205,6890);b=ri(r,1105,2899)}while(dg(a,0)+dg(b,0)<10);return num(`${a.toLocaleString("en-US")} + ${b.toLocaleString("en-US")} = ?`,a+b)}
+  if(k===2){do{a=ri(r,3,9)*100+ri(r,1,8);b=ri(r,112,a-30)}while(dg(a,0)>=dg(b,0)||b%10===0);return num(`${a} − ${b} = ?`,a-b)}
+  if(k===3){do{a=ri(r,312,950);b=ri(r,118,a-50)}while(dg(a,0)>=dg(b,0)||dg(a,1)===0);return num(`${a} − ${b} = ?`,a-b)}
+  if(k===4){do{a=ri(r,12,68);b=ri(r,11,59);c=ri(r,11,49)}while(dg(a,0)+dg(b,0)+dg(c,0)<10);return num(`${a} + ${b} + ${c} = ?`,a+b+c)}
+  if(ri(r,0,1)){do{a=ri(r,18,69);b=ri(r,15,59)}while(dg(a,0)+dg(b,0)<10);return num(`${a} + __ = ${a+b}`,b)}
+  do{a=ri(r,52,98);b=ri(r,15,a-12)}while(dg(a,0)>=dg(b,0));return num(`${a} − __ = ${a-b}`,b)}
+const GROUPS=[["bags","apples"],["boxes","crayons"],["plates","cookies"],["jars","marbles"],["packs","stickers"]];
+function multQ(r,k){const[g,it]=pickOne(r,GROUPS);
+  if(k%2===0){const n=ri(r,2,5),e=pickOne(r,[2,3,4,5,10]);return num(`There are ${n} ${g}. Each has ${e} ${it}. How many ${it} in all?`,n*e)}
+  const p=pickOne(r,[2,3,4,5,10]),e=ri(r,1,Math.min(10,Math.floor(50/p)));return num(`${p*e} ${it} are shared equally into ${p} ${g}. How many ${it} go in each?`,e)}
 const NAMES=["Zara","Milo","Ivy","Theo","Nia","Oscar","Luna","Jett","Kiki","Ravi"];
 const THINGS=[["stickers","packs"],["crayons","boxes"],["cookies","trays"],["marbles","bags"],["seeds","rows"],["books","shelves"]];
 function processQ(r,k){const n=pickOne(r,NAMES),[it,gr]=pickOne(r,THINGS);
-  if(k===0){const g=ri(r,3,9),e=ri(r,4,12),x=ri(r,5,30);return{q:`${n} has ${g} ${gr} of ${it} with ${e} in each. Then ${n} gets ${x} more ${it}. How many ${it} now?`,steps:[mc(r,"Step 1: What should we do first?",`Multiply ${g} × ${e}`,[`Add ${g} + ${x}`,`Subtract ${x} − ${g}`]),num(`Step 2: ${g} × ${e} = ?`,g*e),num(`Step 3: ${g*e} + ${x} = ?`,g*e+x)]}}
-  if(k===1){const p=ri(r,3,8),per=ri(r,3,9),tot=p*per,start=tot+ri(r,10,60);return{q:`${n} had ${start} ${it}. ${n} gave some away and kept ${tot}, then split the kept ${it} equally among ${p} friends. How many ${it} were given away, and how many does each friend get?`,steps:[num(`Step 1: Given away: ${start} − ${tot} = ?`,start-tot),mc(r,`Step 2: To share ${tot} equally among ${p} friends, we…`,"divide",["multiply","add"]),num(`Step 3: ${tot} ÷ ${p} = ?`,per)]}}
-  if(k===2){const c=ri(r,4,9),q=ri(r,3,8),pay=Math.ceil((c*q+1)/10)*10+ri(r,0,2)*10;return{q:`${n} buys ${q} toys that cost $${c} each and pays with $${pay}. How much change does ${n} get?`,steps:[num(`Step 1: Total cost: ${q} × $${c} = ?`,c*q),num(`Step 2: Change: $${pay} − $${c*q} = ?`,pay-c*q)]}}
+  if(k===0){const g=ri(r,2,5),e=pickOne(r,[2,3,4,5,10]),x=ri(r,5,30);return{q:`${n} has ${g} ${gr} of ${it} with ${e} in each. Then ${n} gets ${x} more ${it}. How many ${it} now?`,steps:[mc(r,"Step 1: What should we do first?",`Multiply ${g} × ${e}`,[`Add ${g} + ${x}`,`Subtract ${x} − ${g}`]),num(`Step 2: ${g} × ${e} = ?`,g*e),num(`Step 3: ${g*e} + ${x} = ?`,g*e+x)]}}
+  if(k===1){const p=ri(r,2,5),per=ri(r,2,Math.min(10,Math.floor(50/p))),tot=p*per,start=tot+ri(r,10,60);return{q:`${n} had ${start} ${it}. ${n} gave some away and kept ${tot}, then split the kept ${it} equally among ${p} friends. How many ${it} were given away, and how many does each friend get?`,steps:[num(`Step 1: Given away: ${start} − ${tot} = ?`,start-tot),mc(r,`Step 2: To share ${tot} equally among ${p} friends, we…`,"divide",["multiply","add"]),num(`Step 3: ${tot} ÷ ${p} = ?`,per)]}}
+  if(k===2){const c=pickOne(r,[2,3,4,5,10]),q=ri(r,2,5),pay=Math.ceil((c*q+1)/10)*10+ri(r,0,2)*10;return{q:`${n} buys ${q} toys that cost $${c} each and pays with $${pay}. How much change does ${n} get?`,steps:[num(`Step 1: Total cost: ${q} × $${c} = ?`,c*q),num(`Step 2: Change: $${pay} − $${c*q} = ?`,pay-c*q)]}}
   const a=ri(r,120,480),b=ri(r,105,399),c=ri(r,50,a+b-20);return{q:`A library had ${a} books. It got ${b} new books, then lent out ${c}. How many books are on the shelves now?`,steps:[num(`Step 1: ${a} + ${b} = ?`,a+b),num(`Step 2: ${a+b} − ${c} = ?`,a+b-c)]}}
 function placeQ(r,k){const n=ri(r,1000,9999),d=String(n).split("").map(Number);
   if(k===0){let pos=ri(r,0,3);while(d[pos]===0)pos=(pos+1)%4;const names=["thousands","hundreds","tens","ones"],val=d[pos]*10**(3-pos);return mc(r,`In ${n.toLocaleString("en-US")}, what is the VALUE of the ${d[pos]} in the ${names[pos]} place?`,val.toLocaleString("en-US"),[val*10,pos<3?val/10:val+10,val+1].map(x=>x.toLocaleString("en-US")))}
@@ -70,21 +78,21 @@ function placeQ(r,k){const n=ri(r,1000,9999),d=String(n).split("").map(Number);
   let m;do{m=ri(r,1000,9999)}while(m===n);const big=Math.max(n,m),sm=Math.min(n,m);return mc(r,"Which number is GREATER?",big.toLocaleString("en-US"),[sm.toLocaleString("en-US")])}
 function measureQ(r,k){
   if(k===0){const l=ri(r,3,15),w=ri(r,2,10);return num(`A rectangle is ${l} cm long and ${w} cm wide. What is its PERIMETER in cm?`,2*(l+w))}
-  if(k===1){const l=ri(r,3,12),w=ri(r,2,9);return num(`A rug is ${l} feet long and ${w} feet wide. What is its AREA in square feet?`,l*w)}
+  if(k===1){const l=pickOne(r,[2,3,4,5,10]),w=ri(r,2,10);return num(`A rug is ${l} feet long and ${w} feet wide. What is its AREA in square feet?`,l*w)}
   if(k===2){const h=ri(r,1,10),m=ri(r,0,3)*15,add=ri(r,2,9)*5;let tm=h*60+m+add;const H=Math.floor(tm/60),M=tm%60;return mc(r,`Practice starts at ${h}:${String(m).padStart(2,"0")}. It lasts ${add} minutes. When does it end?`,`${(H+11)%12+1}:${String(M).padStart(2,"0")}`,[1,2,3].map(z=>{const t=tm+z*10-20;const HH=Math.floor(t/60),MM=t%60;return `${(HH+11)%12+1}:${String(MM).padStart(2,"0")}`}).concat([`${h}:${String(m).padStart(2,"0")}`]))}
-  if(k===3){const f=ri(r,2,6);return num(`How many inches are in ${f} feet? (1 foot = 12 inches)`,f*12)}
-  const c=[["meters","centimeters",100],["kilograms","grams",1000],["hours","minutes",60]][ri(r,0,2)],x=ri(r,2,7);return num(`How many ${c[1]} are in ${x} ${c[0]}?`,x*c[2])}
+  if(k===3){const f=ri(r,2,3);return num(`How many inches are in ${f} feet? (1 foot = 12 inches)`,f*12)}
+  const c=[["meters","centimeters",100],["kilograms","grams",1000]][ri(r,0,1)],x=ri(r,2,7);return num(`How many ${c[1]} are in ${x} ${c[0]}?`,x*c[2])}
 const GEO=[["An angle that is exactly like the corner of a square is called…","a right angle",["an acute angle","an obtuse angle"]],["An angle smaller than a right angle is…","acute",["obtuse","straight"]],["An angle larger than a right angle (but less than a straight line) is…","obtuse",["acute","right"]],["Lines that never meet, like train tracks, are…","parallel",["perpendicular","curved"]],["Lines that cross to make square corners are…","perpendicular",["parallel","wavy"]],["A quadrilateral with exactly one pair of parallel sides is a…","trapezoid",["rectangle","triangle"]],["How many sides does an octagon have?","8",["6","10"]],["How many sides does a pentagon have?","5",["6","4"]],["A triangle with all three sides equal is…","equilateral",["scalene","right"]],["How many vertices (corners) does a cube have?","8",["6","12"]],["How many edges does a cube have?","12",["8","6"]],["A shape is cut into 4 equal parts and 3 are shaded. What fraction is shaded?","3/4",["1/4","4/3"]],["Which fraction is the same as 1/2?","2/4",["2/3","1/4"]],["Which fraction is larger?","3/4",["1/4","2/8"]],["How many lines of symmetry does a square have?","4",["2","1"]]];
 function geoQs(r){return shuffle(r,GEO).slice(0,4).map(g=>mc(r,g[0],g[1],g[2]))}
 function wordQ(r,k){const n=pickOne(r,NAMES);
   if(k===0){const a=ri(r,145,620),b=ri(r,128,a-10);return num(`${n}'s school collected ${a} cans on Monday and ${b} cans on Tuesday. How many more cans were collected on Monday?`,a-b)}
-  if(k===1){const rows=ri(r,4,9),per=ri(r,6,12);return num(`A garden has ${rows} rows with ${per} carrots in each row. How many carrots in all?`,rows*per)}
-  if(k===2){const g=ri(r,3,9),each=ri(r,3,9);return num(`${g*each} campers split into ${g} equal teams. How many campers are on each team?`,each)}
+  if(k===1){const rows=ri(r,2,5),per=pickOne(r,[2,3,4,5,10]);return num(`A garden has ${rows} rows with ${per} carrots in each row. How many carrots in all?`,rows*per)}
+  if(k===2){const g=ri(r,2,5),each=ri(r,2,Math.min(10,Math.floor(50/g)));return num(`${g*each} campers split into ${g} equal teams. How many campers are on each team?`,each)}
   const a=ri(r,236,580),b=ri(r,175,390);return num(`A train carried ${a} people in the morning and ${b} in the afternoon. How many people rode in all?`,a+b)}
 function mathParts(day,att){const r=rng(day*104729+att*15485863+7),P=[];
-  P.push({name:"Fact Mix ⚡",intro:"Multiplication, division, and more. Take your time and think!",qs:Array.from({length:12},()=>factQ(r))});
-  P.push({name:"Regroup Rally 🔁",intro:"Carry and borrow like a pro. Work it out on paper if you like!",qs:shuffle(r,[0,1,2,3,0,3].map(k=>regroupQ(r,k)))});
-  P.push({name:"Multiply Mountain ⛰️",intro:"Bigger multiplying! Break numbers into tens and ones.",qs:[0,1,0,1,0].map(k=>multQ(r,k))});
+  P.push({name:"Fact Mix ⚡",intro:"Adding, subtracting, and simple times and sharing facts. Take your time and think!",qs:Array.from({length:12},()=>factQ(r))});
+  P.push({name:"Regroup Rally 🔁",intro:"Carry and borrow like a pro. Work it out on paper if you like!",qs:shuffle(r,[0,1,2,3,4,5,2,5].map(k=>regroupQ(r,k)))});
+  P.push({name:"Equal Groups 🍎",intro:"Make equal groups and share them out. Draw them if it helps!",qs:[0,1,0,1,0,1].map(k=>multQ(r,k))});
   P.push({name:"Step-by-Step Puzzles 🧩",intro:"Solve each puzzle one step at a time.",process:shuffle(r,[0,1,2,3]).slice(0,3).map(k=>processQ(r,k))});
   P.push({name:"Place Value Castle 🏰",intro:"Thousands, hundreds, tens, and ones!",qs:shuffle(r,[0,1,2,3,4]).map(k=>placeQ(r,k))});
   P.push({name:"Measure & Shapes 📐",intro:"Measure it, time it, shape it!",qs:shuffle(r,[...shuffle(r,[0,1,2,3,4]).slice(0,3).map(k=>measureQ(r,k)),...geoQs(r).slice(0,3)])});
@@ -102,10 +110,10 @@ const isUnlocked=d=>d>=1&&d<=S.unlocked;
 function markPart(d,s,i){const l=doneList(d,s);if(!l.includes(i))l.push(i);S.done[key(d,s)]=l;if(dayDone(d)&&d===S.unlocked&&d<DAYS){S.unlocked=d+1}if(dayDone(d)&&!S.badges.includes("Day "+d+" Champ"))S.badges.push("Day "+d+" Champ");save()}
 // ---------- grading (pure, tested) ----------
 function grade(q,response){if(q.ch)return Number(response)===q.a;const v=String(response).trim();if(!/^\d+$/.test(v))return false;return Number(v)===q.num}
-const correctText=q=>q.ch?q.ch[q.a]:String(q.num);
 // ---------- UI ----------
 const PRAISE=["Amazing! 🌟","You're a superstar! ⭐","Brain power! 🧠","Woo-hoo! 🎉","Fantastic! 🦄","Totally awesome! 🚀","Nailed it! 🔨","Spectacular! 🎆"];
-const KIND=["Not quite, and that's okay! Brains grow when we practice. 🌱","Good try! Let's look at it together. 💛","Oops! Mistakes help us learn. 🐢"];
+const KIND=["Not quite, and that's okay! Mistakes are how we learn. 🌱","Good try! Your brain grows when you work on hard things. 💛","Oops! Every mistake teaches you something. 🐢"];
+const MOVEON=["This one was tricky. That's okay! Let's keep going. You can look at it again next time. 💛","Tough one! Tricky problems help your brain grow. Let's try the next one. 🌱"];
 const RETRY=["Good effort! Let's try this part again with new questions. You've got this! 💪","So close! Practice makes progress. Ready for another go? 🌈","Nice try! Every try makes your brain stronger. Let's go again! 🧠"];
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 function h(html){app().innerHTML=html;window.scrollTo(0,0)}
@@ -124,38 +132,42 @@ function runPart(d,s,i,att){const P=parts(d,s,att)[i],qs=flatQs(P);let idx=0,rig
     if(P.passage)x+=`<div class="card passage"><h2>${P.passage.t}</h2>${P.passage.p.map(t=>`<p>${esc(t)}</p>`).join("")}</div>`;
     x+=P.fluency?`<div class="card passage"><p class="huge">${P.fluency}</p></div><button class="go" id="fl">I read it! 🎤</button>`:`<button class="go" id="start">Let's go! ▶️</button>`;
     h(x);$("#back").onclick=()=>dayView(d);if(P.fluency)$("#fl").onclick=()=>finish(1,1);else $("#start").onclick=ask};
-  const ask=()=>{if(idx>=qs.length)return finish(right,qs.length);const q=CUR=qs[idx];let done=false;
-    let x=`<div class="top"><span>Question ${idx+1} of ${qs.length}</span><span id="score">✅ ${right}</span></div>`;
+  const ask=()=>{if(idx>=qs.length)return finish(right,qs.length);const q=CUR=qs[idx];let done=false,tries=0;const maxT=q.ch?Math.min(3,q.ch.length-1):3;
+    let x=`<div class="top"><span>Question ${idx+1} of ${qs.length}</span><span id="score" title="Right on the first try">✅ ${right}</span></div>`;
     if(P.passage)x+=`<details class="card"><summary>📖 Peek at the story</summary>${P.passage.p.map(t=>`<p>${esc(t)}</p>`).join("")}</details>`;
     if(q.ctx)x+=`<div class="card ctx">${esc(q.ctx)}</div><p class="step">${q.step}</p>`;
     x+=`<p class="huge q">${esc(q.q).replace(/\n/g,"<br>")}</p>`;
     x+=q.ch?q.ch.map((c,k)=>`<button class="ans" data-k="${k}">${esc(c)}</button>`).join(""):`<input id="inp" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Your answer" readonly><div class="pad">${[1,2,3,4,5,6,7,8,9,"⌫",0,"✔"].map(k=>`<button class="key" data-key="${k}">${k}</button>`).join("")}</div>`;
     padReset();const qText=(q.ctx?q.ctx+"\n":"")+q.q;
-    h(x+`<button class="spbtn" id="sp">✏️ Scratch Paper</button><div id="fb" class="fb" aria-live="polite"></div>`);$("#sp").onclick=()=>padOpen(qText,q);
-    const respond=(resp,btn)=>{if(done)return;done=true;const ok=grade(q,resp);if(ok)right++;$("#score").textContent="✅ "+right;
-      $$("button.ans,button.key").forEach(b=>b.disabled=true);
-      if(q.ch){$$("button.ans")[q.a].classList.add("correct");if(!ok&&btn)btn.classList.add("wrong")}else $("#inp").classList.add(ok?"correct":"wrong");
-      const fb=$("#fb");fb.className="fb "+(ok?"right":"wrong");
-      fb.innerHTML=ok?`<p class="big">${rnd(PRAISE)}</p>`:`<p class="big">${rnd(KIND)}</p><p class="big">The answer is <b>${esc(correctText(q))}</b>.</p><button class="go" id="nx">Next ➡️</button>`;
-      if(ok)setTimeout(()=>{idx++;ask()},800);else $("#nx").onclick=()=>{idx++;ask()}};
+    h(x+`<button class="spbtn" id="sp">✏️ Scratch Paper</button><button class="spbtn help" id="ah">🙋 Ask for help</button><div id="fb" class="fb" aria-live="polite"></div>`);$("#sp").onclick=()=>padOpen(qText,q);$("#ah").onclick=()=>{padOpen(qText,q);tipsShow()};
+    const tipsHTML=()=>`<p><b>💡 How to work it out:</b></p><ol class="fbtips">${TIPS(q).map(t=>`<li>${esc(t)}</li>`).join("")}</ol>`;
+    const respond=(resp,btn)=>{if(done)return;const ok=grade(q,resp);tries++;const fb=$("#fb");
+      if(ok){done=true;if(tries===1)right++;$("#score").textContent="✅ "+right;$$("button.ans,button.key").forEach(b=>b.disabled=true);
+        if(btn)btn.classList.add("correct");else $("#inp").classList.add("correct");fb.className="fb right";
+        fb.innerHTML=`<p class="big">${tries===1?rnd(PRAISE):"You figured it out! Great job sticking with it! 💪"}</p>`;setTimeout(()=>{idx++;ask()},900);return}
+      $$("button.ans,button.key").forEach(b=>b.disabled=true);if(btn)btn.classList.add("wrong");else $("#inp").classList.add("wrong");fb.className="fb wrong";
+      if(tries<maxT){fb.innerHTML=`<p class="big">${rnd(KIND)}</p>${tipsHTML()}<button class="go" id="ta">Try again 🔁</button>`;
+        $("#ta").onclick=()=>{fb.className="fb";fb.innerHTML="";$$("button.ans").forEach(b=>{if(!b.classList.contains("wrong"))b.disabled=false});$$("button.key").forEach(b=>b.disabled=false);const i=$("#inp");if(i){i.value="";i.classList.remove("wrong")}}}
+      else{done=true;fb.innerHTML=`<p class="big">${rnd(MOVEON)}</p><p>Want to see how to work it out? It's always okay to ask a grown-up or teacher for help, too.</p><button class="small" id="ot">💡 Open Tips</button><button class="small" id="os">✏️ Scratch Paper</button><button class="go" id="nx">Next ➡️</button>`;
+        $("#ot").onclick=()=>{padOpen(qText,q);tipsShow()};$("#os").onclick=()=>padOpen(qText,q);$("#nx").onclick=()=>{idx++;ask()}}};
     if(q.ch)$$(".ans").forEach(b=>b.onclick=()=>respond(b.dataset.k,b));
     else{const inp=$("#inp");$$(".key").forEach(b=>b.onclick=()=>{const k=b.dataset.key;if(k==="⌫")inp.value=inp.value.slice(0,-1);else if(k==="✔"){if(inp.value!=="")respond(inp.value)}else if(inp.value.length<6)inp.value+=k})}};
   const finish=(r,n)=>{CUR=null;padReset();const pct=n?r/n:0;
     if(pct>=PASS){const st=pct===1?3:pct>=.9?2:1;S.stars+=st;markPart(d,s,i);reward(st,d,s,r,n)}
-    else{h(`<h1 class="retry">${RETRY[att%RETRY.length]}</h1><p class="big" id="result">You got ${r} of ${n}. You need ${Math.ceil(n*PASS-1e-9)} to pass.</p><button class="go" id="retry">Try again 🔁</button><button class="small" id="back">⬅ Back</button>`);$("#retry").onclick=()=>runPart(d,s,i,att+1);$("#back").onclick=()=>dayView(d)}};
+    else{h(`<h1 class="retry">${RETRY[att%RETRY.length]}</h1><p class="big" id="result">You got ${r} of ${n} right on the first try. You need ${Math.ceil(n*PASS-1e-9)} to pass. Mistakes help you learn, so let's practice again!</p><button class="go" id="retry">Try again 🔁</button><button class="small" id="back">⬅ Back</button>`);$("#retry").onclick=()=>runPart(d,s,i,att+1);$("#back").onclick=()=>dayView(d)}};
   intro()}
 function reward(st,d,s,r,n){const g=Math.floor(Math.random()*3);let game="",wire=()=>{};
   if(g===0){const R=rnd(RIDDLES);game=`<div class="card"><h2>🤔 Riddle time!</h2><p class="big">${R[0]}</p><button class="ans" id="rv">Show the answer</button><p id="ra" class="big"></p></div>`;wire=()=>$("#rv").onclick=()=>$("#ra").textContent=R[1]}
   else if(g===1){const A=rnd(ANIMALS),opts=shuffle(Math.random,A[1]);game=`<div class="card"><h2>🐾 Guess the animal!</h2><p class="big">${A[0]}</p>${opts.map(c=>`<button class="ans ga">${c}</button>`).join("")}<p id="ra" class="big"></p></div>`;wire=()=>$$(".ga").forEach(b=>b.onclick=()=>$("#ra").textContent=b.textContent===A[1][0]?`Yes! It's a ${A[1][0].toLowerCase()}! 🎉`:"Hee hee, nope! Try another one! 😄")}
   else{const T=rnd(STORIES);game=`<div class="card"><h2>📝 Finish the silly story!</h2><p class="big">${T[0]}</p>${T[1].map(c=>`<button class="ans ss">${c}</button>`).join("")}<p id="ra" class="big"></p></div>`;wire=()=>$$(".ss").forEach(b=>b.onclick=()=>$("#ra").textContent=T[0].replace("___",b.textContent)+" 😂")}
-  h(`<h1 class="passed">${rnd(PRAISE)}</h1><p class="huge">${"⭐".repeat(st)}</p><p class="big" id="result">${n>1?`You got ${r} of ${n} right!`:"Great reading!"}</p>${blockDone(d,s)?`<p class="big">🏆 ${s==="reading"?"Reading":"Math"} block done!</p>`:""}${game}<button class="go" id="next">Keep going ➡️</button>`);
+  h(`<h1 class="passed">${rnd(PRAISE)}</h1><p class="huge">${"⭐".repeat(st)}</p><p class="big" id="result">${n>1?`You got ${r} of ${n} right on the first try!`:"Great reading!"}</p>${blockDone(d,s)?`<p class="big">🏆 ${s==="reading"?"Reading":"Math"} block done!</p>`:""}${game}<button class="go" id="next">Keep going ➡️</button>`);
   wire();$("#next").onclick=()=>dayView(d)}
 
 // ---------- scratch paper (drawing never touches grading or progress) ----------
 const PAD={strokes:[],redo:[],color:"#222",size:4,erase:false,bg:"plain",cur:null};
 const PADCOLORS=[["#222","Black"],["#1f6fe5","Blue"],["#e03131","Red"],["#2f9e44","Green"]],PADSIZES=[[3,"Thin"],[6,"Medium"],[12,"Thick"]];
 function padInit(){if($("#pad"))return;const d=document.createElement("div");d.id="pad";d.hidden=true;d.setAttribute("role","dialog");d.setAttribute("aria-label","Scratch paper");
-  d.innerHTML=`<div id="padtop"><p id="padq"></p><button id="pdtips" class="tipsbtn" aria-label="Tips: how to work it out" aria-expanded="false">💡 Tips</button><button id="pdclose" class="close" aria-label="Close scratch paper">✖ Close</button></div><div id="tipsbox" hidden role="region" aria-label="Tips"><div class="tipshead"><b>💡 How to work it out</b><button id="tipsx" aria-label="Close tips">✖</button></div><ol id="tipslist"></ol><p class="tipsnote">You can do it! 💪</p></div><div id="padbar"><button id="pdpen" class="on" aria-label="Pen">✏️</button><button id="pderase" aria-label="Eraser">🧽</button>${PADCOLORS.map((c,i)=>`<button class="sw pcol ${i?"":"on"}" data-c="${c[0]}" aria-label="${c[1]} pen" style="background:${c[0]}"></button>`).join("")}${PADSIZES.map((z,i)=>`<button class="psz ${i?"":"on"}" data-z="${z[0]}" aria-label="${z[1]} pen"><span style="display:inline-block;width:${z[0]+4}px;height:${z[0]+4}px;border-radius:50%;background:#222;vertical-align:middle"></span></button>`).join("")}<button id="pdundo" aria-label="Undo">↩️</button><button id="pdredo" aria-label="Redo">↪️</button><button id="pdbg" aria-label="Paper style">📄</button><button id="pdclear" aria-label="Clear all">🗑️</button></div><div id="padwrap"><canvas id="padc"></canvas></div>`;
+  d.innerHTML=`<div id="padtop"><p id="padq"></p><button id="pdtips" class="tipsbtn" aria-label="Tips: how to work it out" aria-expanded="false">💡 Tips</button><button id="pdclose" class="close" aria-label="Close scratch paper">✖ Close</button></div><div id="tipsbox" hidden role="region" aria-label="Tips"><div class="tipshead"><b>💡 How to work it out</b><button id="tipsx" aria-label="Close tips">✖</button></div><ol id="tipslist"></ol><p class="tipsnote">Stuck? Mistakes are how we learn. It is okay to ask a grown-up or teacher for help! 💛</p></div><div id="padbar"><button id="pdpen" class="on" aria-label="Pen">✏️</button><button id="pderase" aria-label="Eraser">🧽</button>${PADCOLORS.map((c,i)=>`<button class="sw pcol ${i?"":"on"}" data-c="${c[0]}" aria-label="${c[1]} pen" style="background:${c[0]}"></button>`).join("")}${PADSIZES.map((z,i)=>`<button class="psz ${i?"":"on"}" data-z="${z[0]}" aria-label="${z[1]} pen"><span style="display:inline-block;width:${z[0]+4}px;height:${z[0]+4}px;border-radius:50%;background:#222;vertical-align:middle"></span></button>`).join("")}<button id="pdundo" aria-label="Undo">↩️</button><button id="pdredo" aria-label="Redo">↪️</button><button id="pdbg" aria-label="Paper style">📄</button><button id="pdclear" aria-label="Clear all">🗑️</button></div><div id="padwrap"><canvas id="padc"></canvas></div>`;
   document.body.appendChild(d);const c=$("#padc"),w=$("#padwrap");
   const pt=e=>{const r=c.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]};
   c.addEventListener("pointerdown",e=>{e.preventDefault();c.setPointerCapture&&c.setPointerCapture(e.pointerId);PAD.cur={c:PAD.color,s:PAD.erase?PAD.size*3:PAD.size,e:PAD.erase,p:[pt(e)]};PAD.strokes.push(PAD.cur);PAD.redo=[];padDraw();padBtns()});

@@ -5,8 +5,9 @@ const N=s=>Number(String(s).replace(/[,$]/g,""));
 const PL=["ones","tens","hundreds","thousands"];
 const digs=n=>String(n).split("").reverse().map(Number); // [ones,tens,...]
 function add(a,b){if(a<=12&&b<=12){const big=Math.max(a,b),sm=Math.min(a,b);return[`Start with the bigger number, ${big}.`,`Count on ${sm} more. Put up a finger for each number you say.`,`The last number you say is the answer.`]}
-  const A=digs(a),B=digs(b),n=Math.max(A.length,B.length),s=[`Write ${a} on top and ${b} under it. Line up the ${n>2?"ones, tens, and hundreds":"ones and tens"}.`,`Start in the ones column: add ${A[0]} and ${B[0]}.`,`If the ones make 10 or more, write only the ones digit below. Carry the 1 to the top of the tens column.`,`Now the tens column: add ${A[1]||0} and ${B[1]||0}, plus the 1 if you carried.`];
+  const A=digs(a),B=digs(b),n=Math.max(A.length,B.length),s=[`Write ${a} on top and ${b} under it. Line up the ${n>3?"ones, tens, hundreds, and thousands":n>2?"ones, tens, and hundreds":"ones and tens"}.`,`Start in the ones column: add ${A[0]} and ${B[0]}.`,`If the ones make 10 or more, write only the ones digit below. Carry the 1 to the top of the tens column.`,`Now the tens column: add ${A[1]||0} and ${B[1]||0}, plus the 1 if you carried.`];
   if(n>2)s.push(`If the tens make 10 or more, carry the 1 to the hundreds column.`,`Last, the hundreds column: add ${A[2]||0} and ${B[2]||0}, plus any carried 1.`);
+  if(n>3)s.push(`If the hundreds make 10 or more, carry the 1. Then add the thousands: ${A[3]||0} and ${B[3]||0}, plus any carried 1.`);
   s.push(`Check: your answer should be bigger than ${Math.max(a,b)}.`);return s}
 function sub(a,b){if(a<=20)return[`Start at the smaller number, ${b}.`,`Count up until you reach ${a}. Put up a finger for each jump.`,`Count your fingers. That is how far apart the numbers are.`];
   const A=digs(a),B=digs(b),s=[`Write ${a} on top and ${b} under it. Line up the places.`,`Start in the ones column. Look at ${A[0]} (top) and ${B[0]} (bottom).`];
@@ -27,7 +28,13 @@ function mul(a,b){const big=Math.max(a,b),sm=Math.min(a,b);
   return[`Break ${big} into tens and ones: ${T} and ${O}.`,`Multiply the tens: ${T} × ${sm}. (Think ${T/10} × ${sm}, then put a 0 on the end.)`,`Multiply the ones: ${O} × ${sm}.`,`Add the two parts together. Use column addition.`]}
 function div(a,b){if(a===0)return[`Think of the times fact: ${b} × ? = 0.`,`What number of groups of ${b} makes 0 in all?`];
   return[`${a} ÷ ${b} asks: how many groups of ${b} make ${a}?`,`Think of the times fact: ${b} × ? = ${a}.`,`Skip count by ${b} until you say ${a}. Count how many skips you made.`]}
-function arith(q){const t=q.replace(/[$,]/g,"").match(/(\d+) ([+−×÷]) (\d+) = \?/);if(!t)return null;const a=+t[1],b=+t[3];
+function arith(q){let m;const c=q.replace(/[$,]/g,"");
+  if(m=c.match(/^(\d+) \+ (\d+) \+ (\d+) = \?/))return[`Add two numbers first: ${m[1]} + ${m[2]}. Use column addition.`,`Then add ${m[3]} to that total.`,`Or line up all three numbers and add the ones column first. If the ones make 10 or more, carry to the tens.`,`Check: add them again in a different order.`];
+  if(m=c.match(/^(\d+) \+ __ = (\d+)/))return[`Think: ${m[1]} plus what number makes ${m[2]}?`,`You can count up from ${m[1]} to ${m[2]}: jump by tens, then by ones.`,`Or subtract: ${m[2]} − ${m[1]}. Use column subtraction.`,`Check: add your number to ${m[1]}. You should get ${m[2]}.`];
+  if(m=c.match(/^(\d+) − __ = (\d+)/))return[`Think: ${m[1]} take away what number leaves ${m[2]}?`,`Count up from ${m[2]} to ${m[1]}: jump by tens, then by ones.`,`Or subtract: ${m[1]} − ${m[2]}.`,`Check: ${m[1]} minus your number should be ${m[2]}.`];
+  if(m=c.match(/^There are (\d+) (\w+)\. Each has (\d+) (\w+)\./))return[`There are ${m[1]} equal groups with ${m[3]} in each group.`,`Equal groups means multiply: ${m[1]} × ${m[3]}.`,`Draw ${m[1]} circles with ${m[3]} dots in each, or skip count by ${m[3]}.`];
+  if(m=c.match(/^(\d+) (\w+) are shared equally into (\d+) (\w+)\./))return[`Sharing equally means divide: ${m[1]} ÷ ${m[3]}.`,`Draw ${m[3]} circles. Deal out the ${m[2]} like cards, a single item each turn, until all ${m[1]} are used.`,`Or think of the times fact: ${m[3]} × ? = ${m[1]}.`];
+const t=q.replace(/[$,]/g,"").match(/(\d+) ([+−×÷]) (\d+) = \?/);if(!t)return null;const a=+t[1],b=+t[3];
   return{"+":add,"−":sub,"×":mul,"÷":div}[t[2]](a,b)}
 function place(q){let m;
   if(m=q.match(/^Round ([\d,]+) to the nearest (ten|hundred)\./)){const n=N(m[1]),D=digs(n),i=m[2]==="ten"?1:2,s=[`Find the ${PL[i]} digit. In ${m[1]} it is ${D[i]}.`,`Look at the digit just to its right: ${D[i-1]}.`,`Is ${D[i-1]} a 5 or bigger? Then the ${PL[i]} digit goes up to the next number. Is it 4 or less? Then the ${PL[i]} digit stays the same.`];
