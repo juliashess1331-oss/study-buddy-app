@@ -45,8 +45,12 @@ label{display:block;margin:8px 0}summary{font-size:22px;cursor:pointer}.word sma
 #padwrap.lined{background:repeating-linear-gradient(#fff 0 31px,#b9d3f5 31px 32px)}
 #padwrap.grid{background-color:#fff;background-image:linear-gradient(#cfe0f7 1px,transparent 1px),linear-gradient(90deg,#cfe0f7 1px,transparent 1px);background-size:28px 28px}
 #padc{position:absolute;inset:0;width:100%;height:100%;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#padtop .tipsbtn{flex:none;margin:6px 0 6px 6px;min-height:44px;font-size:1.1rem;padding:0 12px;border-radius:12px;background:#fff3b0;border:2px solid #e0b400;font-weight:700}
+#tipsbox{position:absolute;right:8px;top:62px;width:min(92vw,380px);max-height:60vh;overflow:auto;z-index:5;background:#fffdf3;border:3px solid #e0b400;border-radius:18px;padding:10px 14px;box-shadow:0 6px 24px #0003;font-size:1.1rem;line-height:1.4}
+#tipsbox[hidden]{display:none}#tipsbox .tipshead{display:flex;justify-content:space-between;align-items:center}#tipsbox .tipshead button{min-width:44px;min-height:44px;font-size:1.1rem;border-radius:12px;border:2px solid #ccc;background:#fff}
+#tipsbox ol{margin:6px 0;padding-left:0;list-style:none;counter-reset:st}#tipsbox li{counter-increment:st;margin:8px 0}#tipsbox li::before{content:"Step " counter(st) ": ";font-weight:800;color:#4b2fd1}.tipsnote{margin:4px 0 0;font-weight:700;color:#2a8a3a}
 #padconfirm{position:absolute;left:50%;top:30%;transform:translateX(-50%);background:#fff;border:3px solid #4b2fd1;border-radius:18px;padding:16px;text-align:center;font-size:1.2rem;font-weight:700;box-shadow:0 6px 24px #0003}
 #padconfirm button{min-height:48px;font-size:1.1rem;margin:8px 4px 0;padding:0 16px;border-radius:12px;border:2px solid #ccc;background:#fff}
 body.padopen{overflow:hidden;position:fixed;width:100%}
 </style></head><body><main id="app"></main>
-<script src="content.js"></script><script src="app.js"></script></body></html>
+<script src="content.js"></script><script src="tips.js"></script><script src="app.js"></script></body></html>
