@@ -17,7 +17,7 @@ function numMC(r,q,ans,spread=10,extra){const w=[];let g=0;while(w.length<2&&g++
 const num=(q,ans,extra={})=>({q,num:ans,...extra});
 async function hash(pin){if(!S.salt){S.salt=Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,"0")).join("");save()}const d=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(S.salt+":"+pin));return Array.from(new Uint8Array(d)).map(b=>b.toString(16).padStart(2,"0")).join("")}
 // ---------- reading ----------
-const PASSAGE_ORDER=[0,1,2,6,3,10,15,4,7,5,11,13,8,17,9,14,19,12,16,18]; // gentle ramp: grade 3 -> 4 -> 5, mixed
+const PASSAGE_ORDER=[0,1,2,6,3,10,15,4,7,5,11,13,8,17,9,14,19,12,16,18]; // gentle ramp: level 3 -> 4 -> 5, mixed
 function dayLevel(day){return day<=5?3:day<=12?4:5}
 function vocabForDay(r,day){const lv=dayLevel(day);const fresh=VOCAB.filter(v=>v[1]===lv),older=VOCAB.filter(v=>v[1]<lv||v[1]===lv);
   const start=((day-1)*2)%fresh.length;const pick=[fresh[start],fresh[(start+1)%fresh.length]];
@@ -111,8 +111,8 @@ const rnd=a=>a[Math.floor(Math.random()*a.length)];
 function h(html){app().innerHTML=html;window.scrollTo(0,0)}
 function home(){if(!S.hash)return setupPin();
   let g="";for(let d=1;d<=DAYS;d++){const u=isUnlocked(d),dn=dayDone(d);g+=`<button class="day ${dn?"done":""}" ${u?"":"disabled"} data-day="${d}" aria-label="Day ${d}">${dn?"✅":u?"⭐":"🔒"}<br>Day ${d}</button>`}
-  h(`<h1>Study Buddy 🐙</h1><p class="big">⭐ ${S.stars} stars &nbsp;·&nbsp; 🏅 ${S.badges.length} badges</p><div class="grid">${g}</div><button class="small parent" id="pbtn">Grown-ups 🔐</button>`);
-  $$(".day:not([disabled])").forEach(b=>b.onclick=()=>dayView(+b.dataset.day));$("#pbtn").onclick=()=>askPin(parentArea)}
+  h(`<h1>Study Buddy 🐙</h1><p class="big">⭐ ${S.stars} stars &nbsp;·&nbsp; 🏅 ${S.badges.length} badges</p><div class="grid">${g}</div><button class="small gear" id="pbtn">⚙️ Grown-up / Settings 🔐</button>`);
+  $$(".day:not([disabled])").forEach(b=>b.onclick=()=>dayView(+b.dataset.day));$("#pbtn").onclick=()=>askPin(settingsArea)}
 function dayView(d){if(!isUnlocked(d))return home();
   const blk=s=>{const p=parts(d,s),dl=doneList(d,s);return `<div class="card"><h2>${s==="reading"?"📚 Reading":"🔢 Math"} <small>(about ${S.min[s]} min)</small></h2>${p.map((x,i)=>{const dn=dl.includes(i),open=dn||i===0||dl.includes(i-1);return `<button class="part ${dn?"done":""}" data-s="${s}" data-i="${i}" ${open?"":"disabled"}>${dn?"✅ ":open?"":"🔒 "}${x.name}</button>`}).join("")}</div>`};
   h(`<button class="small" id="back">⬅ Home</button><h1>Day ${d}</h1>${blk("reading")}${blk("math")}${dayDone(d)?`<p class="big">🎉 Day ${d} complete!${d<DAYS?" Day "+(d+1)+" is unlocked!":" You finished them all!"}</p>`:""}`);
@@ -184,25 +184,25 @@ function tipsHide(){const b=$("#tipsbox");if(b){b.hidden=true;$("#pdtips").setAt
 function padOpen(qText,q){padInit();PAD.q=q||null;tipsHide();$("#padq").textContent=qText;$("#pad").hidden=false;document.body.classList.add("padopen");padSize();padBtns()}
 function padClose(){const d=$("#pad");if(!d)return;tipsHide();d.hidden=true;document.body.classList.remove("padopen");const k=$("#padconfirm");if(k)k.remove()}
 function padReset(){PAD.strokes=[];PAD.redo=[];PAD.cur=null;padClose();padDraw()}
-// ---------- parent ----------
-function setupPin(){h(`<h1>Welcome, grown-up! 👋</h1><div class="card"><p>Please set a 4–6 digit parent passcode. You'll need it to open settings, reset progress, or unlock days. It is stored only as a scrambled hash on this device.</p><form><input id="p1" type="password" inputmode="numeric" maxlength="6" placeholder="Passcode" autocomplete="off"><input id="p2" type="password" inputmode="numeric" maxlength="6" placeholder="Type it again" autocomplete="off"></form><p id="pe" class="err"></p><button class="go" id="ok">Save passcode</button></div>`);
+// ---------- settings (passcode) ----------
+function setupPin(){h(`<h1>Welcome, grown-up! 👋</h1><div class="card"><p>Please set a 4–6 digit settings passcode. It keeps Grown-up / Settings private, so only a grown-up or teacher can change minutes, reset progress, or unlock days for the learner. It is stored only as a scrambled hash on this device.</p><form><input id="p1" type="password" inputmode="numeric" maxlength="6" placeholder="Passcode" autocomplete="off"><input id="p2" type="password" inputmode="numeric" maxlength="6" placeholder="Type it again" autocomplete="off"></form><p id="pe" class="err"></p><button class="go" id="ok">Save passcode</button></div>`);
   $("#ok").onclick=async()=>{const a=$("#p1").value,b=$("#p2").value;if(!/^\d{4,6}$/.test(a))return $("#pe").textContent="Please use 4 to 6 digits.";if(a!==b)return $("#pe").textContent="Those don't match. Try again.";S.hash=await hash(a);save();home()}}
-function askPin(next){h(`<h1>Grown-ups only 🔐</h1><form><input id="pin" type="password" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="Passcode"></form><p id="pe" class="err"></p><button class="go" id="ok">Open</button><button class="small" id="cancel">Cancel</button>`);
+function askPin(next){h(`<h1>Settings (passcode) 🔐</h1><p>For a grown-up or teacher.</p><form><input id="pin" type="password" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="Passcode"></form><p id="pe" class="err"></p><button class="go" id="ok">Open</button><button class="small" id="cancel">Cancel</button>`);
   $("#cancel").onclick=home;$("#ok").onclick=async()=>{if(await hash($("#pin").value)===S.hash)next();else{$("#pe").textContent="That passcode isn't right.";$("#pin").value=""}}}
-function parentArea(){
-  h(`<h1>Parent area</h1><div class="card"><h2>Minutes per subject</h2>${["reading","math"].map(s=>`<label>${s[0].toUpperCase()+s.slice(1)}: <select id="m-${s}">${[20,25,30].map(m=>`<option value="${m}" ${S.min[s]==m?"selected":""}>${m} minutes</option>`).join("")}</select></label>`).join("")}<p><small>25 or 30 minutes adds bonus parts to blocks.</small></p><button class="small" id="sm">Save minutes</button></div>
+function settingsArea(){
+  h(`<h1>⚙️ Grown-up / Settings</h1><p>Choose how the learner practices on this device.</p><div class="card"><h2>Minutes per subject</h2>${["reading","math"].map(s=>`<label>${s[0].toUpperCase()+s.slice(1)}: <select id="m-${s}">${[20,25,30].map(m=>`<option value="${m}" ${S.min[s]==m?"selected":""}>${m} minutes</option>`).join("")}</select></label>`).join("")}<p><small>25 or 30 minutes adds bonus parts to blocks.</small></p><button class="small" id="sm">Save minutes</button></div>
   <div class="card"><h2>Progress</h2><p>Unlocked through Day ${S.unlocked} of ${DAYS}. Stars: ${S.stars}.</p><label>Unlock through day: <input id="ud" type="number" min="1" max="${DAYS}" value="${Math.min(S.unlocked+1,DAYS)}"></label><button class="small" id="ub">Unlock</button><button class="small danger" id="rs">Reset all progress</button></div>
   <div class="card"><h2>Change passcode</h2><form><input id="np" type="password" inputmode="numeric" maxlength="6" placeholder="New 4–6 digits" autocomplete="off"></form><button class="small" id="cp">Change passcode</button></div>
   <button class="small" id="help">📱 iPhone setup help</button><button class="small" id="home">⬅ Done</button><p id="msg" class="big"></p>`);
   const m=t=>$("#msg").textContent=t;
   $("#sm").onclick=()=>{S.min.reading=+$("#m-reading").value;S.min.math=+$("#m-math").value;save();m("Saved ✔")};
-  $("#ub").onclick=()=>{const n=Math.max(1,Math.min(DAYS,Math.floor(+$("#ud").value)||1));S.unlocked=Math.max(S.unlocked,n);save();parentArea();$("#msg").textContent="Unlocked through Day "+S.unlocked+" ✔"};
+  $("#ub").onclick=()=>{const n=Math.max(1,Math.min(DAYS,Math.floor(+$("#ud").value)||1));S.unlocked=Math.max(S.unlocked,n);save();settingsArea();$("#msg").textContent="Unlocked through Day "+S.unlocked+" ✔"};
   $("#rs").onclick=()=>{if(confirm("Erase all progress? (The passcode stays.)")){S.done={};S.unlocked=1;S.stars=0;S.badges=[];save();m("Progress reset.")}};
   $("#cp").onclick=async()=>{const v=$("#np").value;if(!/^\d{4,6}$/.test(v))return m("Please use 4–6 digits.");S.hash=await hash(v);save();m("Passcode changed ✔")};
   $("#help").onclick=help;$("#home").onclick=home}
 function help(){h(`<h1>iPhone setup help</h1><div class="card"><h2>1. Add to Home Screen</h2><ol><li>Open the app's web address in <b>Safari</b>.</li><li>Tap the <b>Share</b> button (the square with an arrow).</li><li>Tap <b>Add to Home Screen</b>, then <b>Add</b>.</li><li>Open it once from the Home Screen while online so it saves itself for offline use.</li></ol></div>
 <div class="card"><h2>2. Lock the phone to this app (Guided Access)</h2><ol><li>Open <b>Settings</b>.</li><li>Tap <b>Accessibility</b>.</li><li>Scroll down and tap <b>Guided Access</b>.</li><li>Turn <b>Guided Access</b> on.</li><li>Tap <b>Passcode Settings</b> → <b>Set Guided Access Passcode</b>, and enter a passcode (you can also turn on Face ID or Touch ID).</li><li>Optional: set a <b>Time Limit</b>.</li><li>Open <b>Study Buddy</b> from the Home Screen.</li><li><b>Triple-click the side button</b> (or the Home button on older iPhones), then tap <b>Start</b>.</li><li>To end: triple-click again, enter the Guided Access passcode, and tap <b>End</b>.</li></ol></div>
-<div class="card"><h2>Privacy</h2><p>No accounts, ads, trackers, or internet use after install. Progress stays on this phone. Clearing Safari website data erases progress and the passcode.</p></div><button class="small" id="b">⬅ Back</button>`);$("#b").onclick=parentArea}
+<div class="card"><h2>Privacy</h2><p>No accounts, ads, trackers, or internet use after install. The learner's progress stays on this phone. Clearing Safari website data erases progress and the passcode.</p></div><button class="small" id="b">⬅ Back</button>`);$("#b").onclick=settingsArea}
 if("serviceWorker" in navigator&&location.protocol!=="file:")navigator.serviceWorker.register("service-worker.js").catch(()=>{});
 document.addEventListener("submit",e=>e.preventDefault());
 home();
