@@ -75,7 +75,7 @@ function lessons(job,seed){const r=rr(seed),ri=(a,b)=>a+Math.floor(r()*(b-a+1));
 // ---------- screen ----------
 let T=null;
 const $t=s=>document.querySelector("#tutor "+s);
-function gridHTML(rows,op,n,cells,cur){let h=`<table class="tgrid" aria-label="Place value grid"><tr><th></th>${[...Array(n)].map((_,k)=>`<th class="${n-1-k===cur?"cur":""}">${PL[n-1-k].replace("ten thousands","10 thou.")}</th>`).join("")}</tr>`;
+function gridHTML(rows,op,n,cells,cur){let h=`<table class="tgrid" aria-label="Place value grid"><tr><td></td>${[...Array(n)].map((_,k)=>`<th class="${n-1-k===cur?"cur":""}">${PL[n-1-k].replace("ten thousands","10 thou.")}</th>`).join("")}</tr>`;
   if(cells)h+=`<tr class="mark"><td></td>${[...Array(n)].map((_,k)=>{const c=n-1-k,v=cells.mark[c];return`<td class="${c===cur?"cur":""}">${v===undefined?"":v}</td>`}).join("")}</tr>`;
   rows.forEach((x,ri)=>{h+=`<tr><td class="op">${ri===rows.length-1?op:""}</td>${[...Array(n)].map((_,k)=>{const c=n-1-k,show=len(x)>c;const struck=cells&&ri===0&&op==="−"&&cells.mark[c]!==undefined;return`<td class="${c===cur?"cur":""}${struck?" x":""}">${show?dg(x,c):""}</td>`}).join("")}</tr>`});
   if(cells)h+=`<tr class="ans"><td class="op">=</td>${[...Array(n)].map((_,k)=>{const c=n-1-k,v=cells.ans[c];return`<td class="${c===cur?"cur":""}">${v===undefined?"":v}</td>`}).join("")}</tr>`;
@@ -90,7 +90,7 @@ function render(){const el=document.querySelector("#tutor");if(!el)return;const{
   let h=`<div class="ttop"><b>🧮 Step-by-step helper</b><button id="tx" aria-label="Close helper">✖ Close</button></div><div class="ttabs"><button id="tt1" class="${tab==="steps"?"on":""}">Do it step by step</button><button id="tt2" class="${tab==="learn"?"on":""}">Mini-lessons</button></div><div class="tbody">`;
   if(tab==="steps"){const st=P.steps[i];if(job.note&&i===0)h+=`<p class="tnote">${job.note}</p>`;
     h+=gridHTML(job.nums,job.op,P.n,cells,st.col);
-    h+=`<p class="tstep">Step ${Math.min(i+1,P.steps.length)} of ${P.steps.length}</p><p class="tprompt" id="tprompt">${st.prompt}</p><button class="tsay small" id="tsay" aria-label="Read this step out loud">🔊 Read to me</button><div id="tfb" class="fb" aria-live="polite">${T.fb||""}</div>`+keypad(st.kind)}
+    h+=`<p class="tstep">Step ${Math.min(i+1,P.steps.length)} of ${P.steps.length}</p><p class="tprompt" id="tprompt">${st.prompt}</p><button class="tsay small" id="tsay" aria-label="Read to me: this step">🔊 Read to me</button><div id="tfb" class="fb" aria-live="polite">${T.fb||""}</div>`+keypad(st.kind)}
   else if(T.lesson===null){h+=`<p>Pick a lesson. Each one uses other numbers.</p>`+T.L.map((l,k)=>`<button class="part tl" data-k="${k}">${l.title}</button>`).join("")}
   else{const l=T.L[T.lesson];h+=`<button class="small" id="tlb">⬅ All lessons</button><h2>${l.title}</h2>`+l.lines.map(x=>`<p class="tline">${x}</p>`).join("");
     if(l.grid)h+=gridHTML(l.grid.slice(0,2),l.grid[2],Math.max(len(l.grid[0]),len(l.grid[1])),null,0);

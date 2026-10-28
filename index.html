@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Study Buddy"><meta name="theme-color" content="#6c4cf1">
@@ -12,7 +12,7 @@ body{margin:0;font-family:"Comic Sans MS","Chalkboard SE",system-ui,sans-serif;b
 h1{color:#6c4cf1;text-align:center;font-size:32px}h2{margin:.2em 0}
 .big{font-size:24px;text-align:center}.huge{font-size:30px;text-align:center;font-weight:bold}
 .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-button{font:inherit;border:0;border-radius:18px;min-height:64px;cursor:pointer}
+button{touch-action:manipulation;font:inherit;border:0;border-radius:18px;min-height:64px;cursor:pointer}
 .day{background:#ffd23f;font-size:20px;padding:8px}.day.done{background:#7bd389}.day[disabled]{background:#ddd;color:#888}
 .part,.ans,.go{display:block;width:100%;margin:10px 0;padding:14px;font-size:24px;background:#4cc9f0;color:#08263a}
 .part.done{background:#7bd389}.part[disabled]{background:#ddd;color:#888}
@@ -71,5 +71,35 @@ textarea{font:inherit;font-size:14px;width:100%;border-radius:12px;border:2px so
 .nline{font-size:24px;text-align:center;background:#fff;border-radius:14px;padding:10px}.nline span{font-weight:bold;color:#1d4ed8}
 .tutbtn{border-color:#0e9f6e;background:#e6fff4;color:#065f46}
 body.padopen{overflow:hidden;position:fixed;width:100%}
+/* Phase 5: learner-friendly UI */
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#padbar button,#padtop .close,#padtop .tipsbtn,#tipsbox .tipshead button,#padconfirm button{min-height:60px;min-width:60px}
+.say{display:block;width:100%;margin:8px 0;padding:10px;font-size:22px;background:#fff3b0;color:#5a4300;border:3px solid #e0b400}
+.tipshead .say{display:inline-block;width:auto;margin:0 6px 0 auto;padding:0 12px;font-size:1.1rem;border-radius:12px}
+.mascot{display:flex;align-items:center;gap:10px;margin:8px auto;max-width:520px}.mbody{font-size:56px;display:inline-block;animation:bob 2.4s ease-in-out infinite}
+.mascot.happy .mbody{animation:hop .7s ease-in-out 3}
+.bubble{position:relative;flex:1;margin:0;background:#fff;border:3px solid #6c4cf1;border-radius:20px;padding:10px 14px;font-size:22px;font-weight:bold;color:#3b2a8a}
+.bubble:before{content:"";position:absolute;left:-14px;top:50%;margin-top:-8px;border:8px solid transparent;border-right:8px solid #6c4cf1;border-left:0;width:0;height:0;border-width:8px 14px 8px 0}
+@keyframes bob{50%{transform:translateY(-6px)}}@keyframes hop{50%{transform:translateY(-18px) scale(1.1)}}
+.pathwrap{margin:10px 0}.pathinfo{text-align:center;font-weight:bold;margin:4px 0}
+.bar{height:20px;background:#eee4c8;border-radius:10px;overflow:hidden;margin:0 0 10px}.bar span{display:block;height:100%;background:linear-gradient(90deg,#7bd389,#2f9e44)}
+.grid.path{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.trail{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}.trail polyline{fill:none;stroke:#c9b37a;stroke-width:6;stroke-dasharray:2 10;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.grid.path .day{position:relative;z-index:1;border-radius:50%;aspect-ratio:1;min-height:64px;padding:4px;font-size:17px;line-height:1.2;box-shadow:0 4px 0 #0002}
+.day.here{outline:4px solid #6c4cf1;outline-offset:2px}.day .pin{position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-size:28px}
+.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:90}
+.confetti span{position:absolute;top:-30px;width:12px;height:18px;border-radius:3px;font-size:24px;animation:fall linear forwards}
+@keyframes fall{to{top:105vh;transform:rotate(720deg) translateX(40px)}}
+.dayparty{text-align:center;background:linear-gradient(135deg,#fff3b0,#ffd6f0);border:4px solid #ff9f1c}.starburst{font-size:40px;margin:0;animation:pop 1s ease-out}
+@keyframes pop{0%{transform:scale(.2)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+.chk{display:flex;align-items:center;gap:12px;font-size:22px;min-height:60px}.chk input{width:36px;height:36px;margin:0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* high contrast */
+body.hc{background:#fff;color:#000}body.hc h1,body.hc .step,body.hc .tstep{color:#000}
+body.hc button{background:#fff!important;color:#000!important;border:4px solid #000!important}
+body.hc button[disabled]{color:#555!important;border-style:dashed!important}body.hc .day.done,body.hc .correct{background:#c6f6c6!important}body.hc .wrong{background:#ffd0d0!important}
+body.hc .card,body.hc .bubble,body.hc .ctx{background:#fff;border:3px solid #000;color:#000}body.hc .fb.right,body.hc .fb .right{color:#004d00}body.hc .fb.wrong,body.hc .fb .wrong{color:#8b0000}
+body.hc .trail polyline{stroke:#000}body.hc .bar{border:2px solid #000}body.hc .bar span{background:#000}body.hc input,body.hc select{border-color:#000;color:#000}
+body.hc .go{font-weight:bold}
 </style></head><body><main id="app"></main>
-<script src="content.js"></script><script src="tips.js"></script><script src="storage.js"></script><script src="tutor.js"></script><script src="skills.js"></script><script src="app.js"></script></body></html>
+<script src="content.js"></script><script src="tips.js"></script><script src="storage.js"></script><script src="tutor.js"></script><script src="skills.js"></script><script src="fun.js"></script><script src="app.js"></script></body></html>
