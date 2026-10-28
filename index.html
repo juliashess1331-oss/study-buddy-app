@@ -54,6 +54,22 @@ label{display:block;margin:8px 0}summary{font-size:22px;cursor:pointer}.word sma
 #savewarn{position:sticky;top:0;z-index:60;background:#ffe08a;color:#5a3b00;font-weight:700;text-align:center;padding:10px;border-radius:0 0 14px 14px}
 textarea{font:inherit;font-size:14px;width:100%;border-radius:12px;border:2px solid #6c4cf1;padding:8px;word-break:break-all;-webkit-user-select:text;user-select:text}
 .note{background:#fff3c4}
+#tutor{position:fixed;inset:0;z-index:70;background:#fffdf5;overflow:auto;padding:env(safe-area-inset-top) 12px 30px;overscroll-behavior:none}
+.ttop{display:flex;justify-content:space-between;align-items:center;font-size:22px;padding:6px 0}.ttop button{min-height:60px;padding:0 16px;background:#ffe3e3;font-size:20px}
+.ttabs{display:flex;gap:8px}.ttabs button{flex:1;background:#e0d7ff;font-size:19px;min-height:60px}.ttabs button.on{background:#6c4cf1;color:#fff}
+.tbody{max-width:640px;margin:auto}.tgrid{margin:12px auto;border-collapse:collapse;font-size:34px;font-family:ui-monospace,Menlo,monospace}
+.tgrid th{font-size:12px;color:#666;font-weight:normal;padding:0 4px}.tgrid td{width:52px;height:52px;text-align:center;border:1px solid #eee}
+.tgrid .mark td{font-size:22px;color:#c2410c;height:30px}.tgrid .ans td{border-top:4px solid #222;color:#1d4ed8;font-weight:bold}.tgrid td.op{border:0;width:30px}
+.tgrid .cur{background:#fff3b0}.tgrid th.cur{background:#ffd23f;color:#222;font-weight:bold}.tgrid td.x{text-decoration:line-through;color:#999}
+.tprompt{font-size:24px;text-align:center;font-weight:bold}.tstep{text-align:center;color:#6c4cf1;margin:0}.tnote{background:#fff3c4;padding:8px;border-radius:12px}
+.tin{font-size:36px;text-align:center;min-height:56px;border:3px solid #6c4cf1;border-radius:14px;background:#fff;margin:6px 0}
+.tkeys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.tkeys.yn{grid-template-columns:1fr 1fr}.tk{font-size:30px;background:#ffd23f;min-height:64px}
+.fb .right{color:#1d7a36;font-size:22px}.fb .wrong{color:#a33;font-size:22px}.tline{font-size:22px;margin:6px 0}
+.blocks{background:#fff;border-radius:14px;padding:8px;margin:8px 0}.blocks div{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}
+.bh{width:50px;height:50px;background:#f59e0b;border:2px solid #b45309;background-image:linear-gradient(#b4530955 1px,transparent 1px),linear-gradient(90deg,#b4530955 1px,transparent 1px);background-size:5px 5px}
+.bt{width:8px;height:50px;background:#22c55e;border:1px solid #15803d}.bo{width:10px;height:10px;background:#3b82f6;border:1px solid #1e40af}
+.nline{font-size:24px;text-align:center;background:#fff;border-radius:14px;padding:10px}.nline span{font-weight:bold;color:#1d4ed8}
+.tutbtn{border-color:#0e9f6e;background:#e6fff4;color:#065f46}
 body.padopen{overflow:hidden;position:fixed;width:100%}
 </style></head><body><main id="app"></main>
-<script src="content.js"></script><script src="tips.js"></script><script src="storage.js"></script><script src="app.js"></script></body></html>
+<script src="content.js"></script><script src="tips.js"></script><script src="storage.js"></script><script src="tutor.js"></script><script src="app.js"></script></body></html>

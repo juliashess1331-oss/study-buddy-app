@@ -130,6 +130,7 @@ function dayView(d){if(!isUnlocked(d))return home();
   const blk=s=>{const p=parts(d,s);return `<div class="card"><h2>${s==="reading"?"📚 Reading":"🔢 Math"} <small>(about ${S.min[s]} min)</small></h2>${p.map((x,i)=>{const dn=isDone(d,s,x.id),open=dn||i===0||isDone(d,s,p[i-1].id);return `<button class="part ${dn?"done":""}" data-s="${s}" data-i="${i}" ${open?"":"disabled"}>${dn?"✅ ":open?"":"🔒 "}${x.name}</button>`}).join("")}</div>`};
   h(`<button class="small" id="back">⬅ Home</button><h1>Day ${d}</h1>${blk("reading")}${blk("math")}${dayDone(d)?`<p class="big">🎉 Day ${d} complete!${d<DAYS?" Day "+(d+1)+" is unlocked!":" You finished them all!"}</p>`:""}`);
   $("#back").onclick=home;$$(".part:not([disabled])").forEach(b=>b.onclick=()=>runPart(d,b.dataset.s,+b.dataset.i,0))}
+const TUTBTN=`<button class="spbtn tutbtn">🧮 Step-by-step helper</button>`;
 let CUR=null; // current question (used by automated tests)
 function runPart(d,s,i,att){const P=parts(d,s,att)[i],qs=flatQs(P),id=STORE.pid(d,s,P.id);let idx=0,right=0;
   const resume=S.cur&&S.cur.pid===id&&S.cur.att===att&&S.cur.idx>0&&S.cur.idx<qs.length?S.cur:null;
@@ -145,21 +146,22 @@ function runPart(d,s,i,att){const P=parts(d,s,att)[i],qs=flatQs(P),id=STORE.pid(
     if(q.ctx)x+=`<div class="card ctx">${esc(q.ctx)}</div><p class="step">${q.step}</p>`;
     x+=`<p class="huge q">${esc(q.q).replace(/\n/g,"<br>")}</p>`;
     x+=q.ch?q.ch.map((c,k)=>`<button class="ans" data-k="${k}">${esc(c)}</button>`).join(""):`<input id="inp" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Your answer" readonly><div class="pad">${[1,2,3,4,5,6,7,8,9,"⌫",0,"✔"].map(k=>`<button class="key" data-key="${k}">${k}</button>`).join("")}</div>`;
-    padReset();const qText=(q.ctx?q.ctx+"\n":"")+q.q;
-    h(x+`<button class="spbtn" id="sp">✏️ Scratch Paper</button><button class="spbtn help" id="ah">🙋 Ask for help</button><div id="fb" class="fb" aria-live="polite"></div>`);$("#sp").onclick=()=>padOpen(qText,q);$("#ah").onclick=()=>{padOpen(qText,q);tipsShow()};
-    const tipsHTML=()=>`<p><b>💡 How to work it out:</b></p><ol class="fbtips">${TIPS(q).map(t=>`<li>${esc(t)}</li>`).join("")}</ol>`;
+    padReset();const canTut=!!TUTOR.parse(q);const qText=(q.ctx?q.ctx+"\n":"")+q.q;
+    h(x+`<button class="spbtn" id="sp">✏️ Scratch Paper</button><button class="spbtn help" id="ah">🙋 Ask for help</button>${canTut?TUTBTN:""}<div id="fb" class="fb" aria-live="polite"></div>`);$("#sp").onclick=()=>padOpen(qText,q);$("#ah").onclick=()=>{padOpen(qText,q);tipsShow()};
+    const tipsHTML=()=>`<p><b>💡 How to work it out:</b></p><ol class="fbtips">${TIPS(q).map(t=>`<li>${esc(t)}</li>`).join("")}</ol>${canTut?TUTBTN:""}`;
+    const wireTut=()=>$$(".tutbtn").forEach(b=>b.onclick=()=>TUTOR.open(q));wireTut();
     const respond=(resp,btn)=>{if(done)return;const ok=grade(q,resp);tries++;const fb=$("#fb");
       if(ok){done=true;if(tries===1)right++;$("#score").textContent="✅ "+right;$$("button.ans,button.key").forEach(b=>b.disabled=true);
         if(btn)btn.classList.add("correct");else $("#inp").classList.add("correct");fb.className="fb right";
         fb.innerHTML=`<p class="big">${tries===1?rnd(PRAISE):"You figured it out! Great job sticking with it! 💪"}</p>`;idx++;saveSpot();setTimeout(ask,900);return}
       $$("button.ans,button.key").forEach(b=>b.disabled=true);if(btn)btn.classList.add("wrong");else $("#inp").classList.add("wrong");fb.className="fb wrong";
-      if(tries<maxT){fb.innerHTML=`<p class="big">${rnd(KIND)}</p>${tipsHTML()}<button class="go" id="ta">Try again 🔁</button>`;
+      if(tries<maxT){fb.innerHTML=`<p class="big">${rnd(KIND)}</p>${tipsHTML()}<button class="go" id="ta">Try again 🔁</button>`;wireTut();
         $("#ta").onclick=()=>{fb.className="fb";fb.innerHTML="";$$("button.ans").forEach(b=>{if(!b.classList.contains("wrong"))b.disabled=false});$$("button.key").forEach(b=>b.disabled=false);const i=$("#inp");if(i){i.value="";i.classList.remove("wrong")}}}
-      else{done=true;fb.innerHTML=`<p class="big">${rnd(MOVEON)}</p><p>Want to see how to work it out? It's always okay to ask a grown-up or teacher for help, too.</p><button class="small" id="ot">💡 Open Tips</button><button class="small" id="os">✏️ Scratch Paper</button><button class="go" id="nx">Next ➡️</button>`;
+      else{done=true;fb.innerHTML=`<p class="big">${rnd(MOVEON)}</p><p>Want to see how to work it out? It's always okay to ask a grown-up or teacher for help, too.</p><button class="small" id="ot">💡 Open Tips</button><button class="small" id="os">✏️ Scratch Paper</button>${canTut?TUTBTN:""}<button class="go" id="nx">Next ➡️</button>`;wireTut();
         $("#ot").onclick=()=>{padOpen(qText,q);tipsShow()};$("#os").onclick=()=>padOpen(qText,q);idx++;saveSpot();$("#nx").onclick=ask}};
     if(q.ch)$$(".ans").forEach(b=>b.onclick=()=>respond(b.dataset.k,b));
     else{const inp=$("#inp");$$(".key").forEach(b=>b.onclick=()=>{const k=b.dataset.key;if(k==="⌫")inp.value=inp.value.slice(0,-1);else if(k==="✔"){if(inp.value!=="")respond(inp.value)}else if(inp.value.length<6)inp.value+=k})}};
-  const finish=(r,n)=>{CUR=null;padReset();const pct=n?r/n:0;
+  const finish=(r,n)=>{CUR=null;TUTOR.close();padReset();const pct=n?r/n:0;
     if(pct>=PASS){const st=pct===1?3:pct>=.9?2:1;S.stars+=st;markPart(d,s,P.id,r,n);reward(st,d,s,r,n)}
     else{if(S.cur&&S.cur.pid===id){delete S.cur;save()}
       h(`<h1 class="retry">${RETRY[att%RETRY.length]}</h1><p class="big" id="result">You got ${r} of ${n} right on the first try. You need ${Math.ceil(n*PASS-1e-9)} to pass. Mistakes help you learn, so let's practice again!</p><button class="go" id="retry">Try again 🔁</button><button class="small" id="back">⬅ Back</button>`);$("#retry").onclick=()=>runPart(d,s,i,att+1);$("#back").onclick=()=>dayView(d)}};
@@ -199,7 +201,8 @@ function padDraw(){const c=$("#padc");if(!c)return;const x=c.getContext("2d"),dp
   x.globalCompositeOperation="source-over"}
 function padBtns(){$("#pdpen").classList.toggle("on",!PAD.erase);$("#pderase").classList.toggle("on",PAD.erase);$$(".pcol").forEach(b=>b.classList.toggle("on",!PAD.erase&&b.dataset.c===PAD.color));$$(".psz").forEach(b=>b.classList.toggle("on",+b.dataset.z===PAD.size));
   $("#pdundo").disabled=!PAD.strokes.length;$("#pdredo").disabled=!PAD.redo.length;$("#pdclear").disabled=!PAD.strokes.length;$("#pdbg").textContent={plain:"📄",lined:"📝",grid:"🔲"}[PAD.bg]}
-function tipsShow(){const L=$("#tipslist");L.innerHTML="";(PAD.q?TIPS(PAD.q):[]).forEach(t=>{const li=document.createElement("li");li.textContent=t;L.appendChild(li)});$("#tipsbox").hidden=false;$("#pdtips").setAttribute("aria-expanded","true")}
+function tipsShow(){const L=$("#tipslist");L.innerHTML="";(PAD.q?TIPS(PAD.q):[]).forEach(t=>{const li=document.createElement("li");li.textContent=t;L.appendChild(li)});
+  const ob=$("#tipstut");if(ob)ob.remove();if(PAD.q&&TUTOR.parse(PAD.q)){const b=document.createElement("button");b.id="tipstut";b.className="spbtn tutbtn";b.textContent="🧮 Step-by-step helper";const q=PAD.q;b.onclick=()=>TUTOR.open(q);L.after(b)}$("#tipsbox").hidden=false;$("#pdtips").setAttribute("aria-expanded","true")}
 function tipsHide(){const b=$("#tipsbox");if(b){b.hidden=true;$("#pdtips").setAttribute("aria-expanded","false")}}
 function padOpen(qText,q){padInit();PAD.q=q||null;tipsHide();$("#padq").textContent=qText;$("#pad").hidden=false;document.body.classList.add("padopen");padSize();padBtns()}
 function padClose(){const d=$("#pad");if(!d)return;tipsHide();d.hidden=true;document.body.classList.remove("padopen");const k=$("#padconfirm");if(k)k.remove()}
