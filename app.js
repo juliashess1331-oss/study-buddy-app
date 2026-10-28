@@ -121,9 +121,27 @@ const rnd=a=>a[Math.floor(Math.random()*a.length)];
 function h(html){app().innerHTML=html;window.scrollTo(0,0)}
 function home(){if(!S.hash)return setupPin();
   let g="";for(let d=1;d<=DAYS;d++){const u=isUnlocked(d),dn=dayDone(d);g+=`<button class="day ${dn?"done":""}" ${u?"":"disabled"} data-day="${d}" aria-label="Day ${d}">${dn?"✅":u?"⭐":"🔒"}<br>Day ${d}</button>`}
-  h(`<h1>Study Buddy 🐙</h1><p class="big">⭐ ${S.stars} stars &nbsp;·&nbsp; 🏅 ${S.badges.length} badges</p><div class="grid">${g}</div>${noteHTML()}<button class="small gear" id="pbtn">⚙️ Grown-up / Settings 🔐</button>`);
+  h(`<h1>Study Buddy 🐙</h1><p class="big">⭐ ${S.stars} stars &nbsp;·&nbsp; 🏅 ${S.badges.length} badges</p>${reviewHTML()}<div class="grid">${g}</div><button class="part" id="xp">🎯 Extra practice</button>${noteHTML()}<button class="small gear" id="pbtn">⚙️ Grown-up / Settings 🔐</button>`);
   const nb=$("#noteok");if(nb)nb.onclick=()=>{S.note=1;save();home()};
+  $$(".rvb").forEach(b=>b.onclick=()=>practice(b.dataset.k,"review"));$("#xp").onclick=()=>practiceMenu();
   $$(".day:not([disabled])").forEach(b=>b.onclick=()=>dayView(+b.dataset.day));$("#pbtn").onclick=()=>askPin(settingsArea)}
+// ---------- skills: review and extra practice ----------
+const skillKeys=()=>Object.keys(SKILL.NAMES);
+function reviewHTML(){const due=SKILL.dueList(S);if(!due.length)return"";return`<div class="card review"><h2>🔁 Review time</h2><p>Practice these again to keep them strong.</p>${due.map(k=>`<button class="part rvb" data-k="${k}">${SKILL.name(k)}</button>`).join("")}</div>`}
+function skillDay(k){const[s,id]=k.split(":");for(let d=unlockedThrough();d>=1;d--)if(parts(d,s).some(P=>P.id===id))return d;for(let d=1;d<=DAYS;d++)if(parts(d,s).some(P=>P.id===id))return d;return 1}
+// Make a fresh set of questions for one skill.
+function skillSet(k,n,seed){const[s,id]=k.split(":"),d=skillDay(k);let qs=[],P0=null;for(let a=0;a<6&&qs.length<n;a++){const P=parts(d,s,seed+a).find(P=>P.id===id);if(!P)break;if(!P0)P0=P;
+    if(P.passage){qs=flatQs(P).slice(0,n);P0=P;break}
+    if(P.process){qs=flatQs({process:P.process.slice(0,2)});break}qs=qs.concat(flatQs(P))}
+  if(!(P0&&P0.process))qs=qs.slice(0,n);return{P0,qs,s,d}}
+function practiceMenu(){const keys=skillKeys().filter(k=>skillDay(k)<=unlockedThrough()||S.sk[k]),w=SKILL.weakest(S,keys);
+  h(`<button class="small" id="back">⬅ Back</button><h1>🎯 Extra practice</h1><p class="big">New questions every time. Pick one.</p><button class="go xpk" data-k="${w}">⭐ Best pick: ${SKILL.name(w)}</button>${keys.filter(k=>k!==w).map(k=>`<button class="part xpk" data-k="${k}">${SKILL.name(k)}${SKILL.mastered(S,k)?" 🏆":""}</button>`).join("")}`);
+  $("#back").onclick=home;$$(".xpk").forEach(b=>b.onclick=()=>practice(b.dataset.k,"extra"))}
+function practice(k,mode){const seed=1000+Math.floor(Math.random()*1e6),{P0,qs,s,d}=skillSet(k,mode==="review"?5:6,seed);if(!P0||!qs.length)return home();
+  const P={...P0,id:mode+"-"+k.replace(":","-"),name:(mode==="review"?"🔁 Review: ":"🎯 Practice: ")+SKILL.name(k),intro:mode==="review"?"Let's see if you still remember. Take your time.":"Fresh questions just for practice.",qs,process:null};
+  runPart(d,s,0,seed,{P,k,done:(r,n)=>{let msg;if(mode==="review"){const due=SKILL.reviewed(S,k,r,n);msg=r/n>=PASS?(due===null?"You remember it well! All reviews done! 🏆":"Great memory! Next review comes later. 🌟"):"Good practice! We will review it again tomorrow. 💪"}
+    else msg=r/n>=PASS?"Awesome practice! 🌟":"Good practice! Every try helps you learn. 💪";
+    if(r/n>=PASS)S.stars+=1;save();h(`<h1>${msg}</h1><p class="big" id="result">You got ${r} of ${n} right on the first try.</p><button class="go" id="again">🎯 More practice</button><button class="small" id="home">🏠 Home</button>`);$("#again").onclick=()=>practice(k,"extra");$("#home").onclick=home}})}
 const standalone=()=>navigator.standalone===true||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
 function noteHTML(){return S.note?"":`<div class="card note" id="note"><b>📌 Note for a grown-up</b><p>${standalone()?"Great! You opened Study Buddy from the Home Screen icon. Always open it this way so progress stays saved.":"Please open Study Buddy from its Home Screen icon, not from Safari. Each one keeps its own progress."} A backup code is in Grown-up / Settings.</p><button class="small" id="noteok">Got it</button></div>`}
 function dayView(d){if(!isUnlocked(d))return home();
@@ -132,13 +150,13 @@ function dayView(d){if(!isUnlocked(d))return home();
   $("#back").onclick=home;$$(".part:not([disabled])").forEach(b=>b.onclick=()=>runPart(d,b.dataset.s,+b.dataset.i,0))}
 const TUTBTN=`<button class="spbtn tutbtn">🧮 Step-by-step helper</button>`;
 let CUR=null; // current question (used by automated tests)
-function runPart(d,s,i,att){const P=parts(d,s,att)[i],qs=flatQs(P),id=STORE.pid(d,s,P.id);let idx=0,right=0;
+function runPart(d,s,i,att,X){const P=X?X.P:parts(d,s,att)[i],skk=X?X.k:SKILL.key(s,P.id),qs=flatQs(P),id=STORE.pid(d,s,P.id);let idx=0,right=0;
   const resume=S.cur&&S.cur.pid===id&&S.cur.att===att&&S.cur.idx>0&&S.cur.idx<qs.length?S.cur:null;
   const intro=()=>{let x=`<button class="small" id="back">⬅ Back</button><h1>${P.name}</h1><p class="big">${P.intro}</p>`;
     if(P.learn)x+=P.learn.map(w=>`<div class="card word"><b class="big">${w[0]}</b><br>Means: ${w[2]}<br>Same: <i>${w[3]}</i> · Opposite: <i>${w[4]}</i><br><small>“${w[5].replace("___",w[0])}”</small></div>`).join("");
     if(P.passage)x+=`<div class="card passage"><h2>${P.passage.t}</h2>${P.passage.p.map(t=>`<p>${esc(t)}</p>`).join("")}</div>`;
     x+=P.fluency?`<div class="card passage"><p class="huge">${P.fluency}</p></div><button class="go" id="fl">I read it! 🎤</button>`:(resume?`<button class="go" id="resume">Keep going from question ${resume.idx+1} ▶️</button><button class="small" id="start">Start over</button>`:`<button class="go" id="start">Let's go! ▶️</button>`);
-    h(x);$("#back").onclick=()=>dayView(d);if(P.fluency)$("#fl").onclick=()=>finish(1,1);else{$("#start").onclick=()=>{idx=0;right=0;ask()};if(resume)$("#resume").onclick=()=>{idx=resume.idx;right=resume.right;ask()}}};
+    h(x);$("#back").onclick=()=>X?home():dayView(d);if(P.fluency)$("#fl").onclick=()=>finish(1,1);else{$("#start").onclick=()=>{idx=0;right=0;ask()};if(resume)$("#resume").onclick=()=>{idx=resume.idx;right=resume.right;ask()}}};
   const saveSpot=()=>{S.cur={pid:id,att,idx,right};save()};
   const ask=()=>{if(idx>=qs.length)return finish(right,qs.length);const q=CUR=qs[idx];let done=false,tries=0;const maxT=q.ch?Math.min(3,q.ch.length-1):3;
     let x=`<div class="top"><span>Question ${idx+1} of ${qs.length}</span><span id="score" title="Right on the first try">✅ ${right}</span></div>`;
@@ -150,7 +168,7 @@ function runPart(d,s,i,att){const P=parts(d,s,att)[i],qs=flatQs(P),id=STORE.pid(
     h(x+`<button class="spbtn" id="sp">✏️ Scratch Paper</button><button class="spbtn help" id="ah">🙋 Ask for help</button>${canTut?TUTBTN:""}<div id="fb" class="fb" aria-live="polite"></div>`);$("#sp").onclick=()=>padOpen(qText,q);$("#ah").onclick=()=>{padOpen(qText,q);tipsShow()};
     const tipsHTML=()=>`<p><b>💡 How to work it out:</b></p><ol class="fbtips">${TIPS(q).map(t=>`<li>${esc(t)}</li>`).join("")}</ol>${canTut?TUTBTN:""}`;
     const wireTut=()=>$$(".tutbtn").forEach(b=>b.onclick=()=>TUTOR.open(q));wireTut();
-    const respond=(resp,btn)=>{if(done)return;const ok=grade(q,resp);tries++;const fb=$("#fb");
+    const respond=(resp,btn)=>{if(done)return;const ok=grade(q,resp);tries++;if(tries===1)SKILL.record(S,skk,ok);const fb=$("#fb");
       if(ok){done=true;if(tries===1)right++;$("#score").textContent="✅ "+right;$$("button.ans,button.key").forEach(b=>b.disabled=true);
         if(btn)btn.classList.add("correct");else $("#inp").classList.add("correct");fb.className="fb right";
         fb.innerHTML=`<p class="big">${tries===1?rnd(PRAISE):"You figured it out! Great job sticking with it! 💪"}</p>`;idx++;saveSpot();setTimeout(ask,900);return}
@@ -161,7 +179,7 @@ function runPart(d,s,i,att){const P=parts(d,s,att)[i],qs=flatQs(P),id=STORE.pid(
         $("#ot").onclick=()=>{padOpen(qText,q);tipsShow()};$("#os").onclick=()=>padOpen(qText,q);idx++;saveSpot();$("#nx").onclick=ask}};
     if(q.ch)$$(".ans").forEach(b=>b.onclick=()=>respond(b.dataset.k,b));
     else{const inp=$("#inp");$$(".key").forEach(b=>b.onclick=()=>{const k=b.dataset.key;if(k==="⌫")inp.value=inp.value.slice(0,-1);else if(k==="✔"){if(inp.value!=="")respond(inp.value)}else if(inp.value.length<6)inp.value+=k})}};
-  const finish=(r,n)=>{CUR=null;TUTOR.close();padReset();const pct=n?r/n:0;
+  const finish=(r,n)=>{CUR=null;TUTOR.close();padReset();const pct=n?r/n:0;if(X){if(S.cur&&S.cur.pid===id){delete S.cur}return X.done(r,n)}
     if(pct>=PASS){const st=pct===1?3:pct>=.9?2:1;S.stars+=st;markPart(d,s,P.id,r,n);reward(st,d,s,r,n)}
     else{if(S.cur&&S.cur.pid===id){delete S.cur;save()}
       h(`<h1 class="retry">${RETRY[att%RETRY.length]}</h1><p class="big" id="result">You got ${r} of ${n} right on the first try. You need ${Math.ceil(n*PASS-1e-9)} to pass. Mistakes help you learn, so let's practice again!</p><button class="go" id="retry">Try again 🔁</button><button class="small" id="back">⬅ Back</button>`);$("#retry").onclick=()=>runPart(d,s,i,att+1);$("#back").onclick=()=>dayView(d)}};
