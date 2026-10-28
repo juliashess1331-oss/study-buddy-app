@@ -1,10 +1,11 @@
 "use strict";
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],app=()=>$("#app");
-const DAYS=20,LS="studybuddy_v1",PASS=0.8;
-let S=load();
-function load(){try{return JSON.parse(localStorage.getItem(LS))||{}}catch(e){return{}}}
-function save(){localStorage.setItem(LS,JSON.stringify(S))}
-(function init(){S.done=S.done||{};S.unlocked=S.unlocked||1;S.stars=S.stars||0;S.badges=S.badges||[];S.min=S.min||{reading:20,math:20};save()})();
+const DAYS=20,PASS=0.8;
+let S=STORE.load();
+function save(){const ok=STORE.save(S);saveWarn(!ok);return ok}
+function saveWarn(on){let w=document.querySelector("#savewarn");if(!on){if(w&&w.remove)w.remove();return}
+  if(!w){w=document.createElement("div");w.id="savewarn";w.setAttribute("role","alert");w.textContent="⚠️ Progress could not be saved. Please tell a grown-up.";document.body.prepend(w)}}
+save();
 // ---------- helpers ----------
 function rng(seed){seed=seed>>>0;return()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}}
 const ri=(r,a,b)=>a+Math.floor(r()*(b-a+1));
@@ -29,19 +30,19 @@ const related=(a,b)=>FAMILIES.some(f=>f.includes(a[0])&&f.includes(b[0]));
 function readingParts(day,att){
   const r=rng(day*9973+att*7919+11),words=vocabForDay(r,day),others=VOCAB.filter(v=>!words.includes(v)),P=[];
   const meanings=w=>shuffle(r,others.filter(o=>!related(w,o))).map(o=>o[2]).filter(m=>m!==w[2]);
-  P.push({name:"Word Wizards 🪄",intro:"Meet your new words! Read each card, then tap the best answer.",learn:words,
+  P.push({id:"words",name:"Word Wizards 🪄",intro:"Meet your new words! Read each card, then tap the best answer.",learn:words,
     qs:shuffle(r,[...words.map(w=>mc(r,`What does “${w[0]}” mean?`,w[2],meanings(w))),...words.slice(0,2).map(w=>mc(r,`Context clue! Which word fits?\n“${w[5]}”`,w[0],shuffle(r,others.filter(o=>pos(w)==="v"?pos(o)==="a":pos(o)==="v")).map(o=>o[0])))])});
-  P.push({name:"Same & Opposite 🔄",intro:"Synonym = SAME meaning. Antonym = OPPOSITE meaning.",
+  P.push({id:"sameopp",name:"Same & Opposite 🔄",intro:"Synonym = SAME meaning. Antonym = OPPOSITE meaning.",
     qs:shuffle(r,words.flatMap(w=>{const so=shuffle(r,others.filter(o=>!related(w,o)));return[mc(r,`Which word is a SYNONYM (same) for “${w[0]}”?`,w[3],[w[4],...so.map(o=>o[4])].filter(x=>x!==w[3])),mc(r,`Which word is an ANTONYM (opposite) of “${w[0]}”?`,w[4],[w[3],...so.map(o=>o[3])].filter(x=>x!==w[4]))]})).slice(0,6)});
   const wpPool=shuffle(r,WORDPARTS),mKey=x=>(x[0].match(/Here, (\w+) means/)||[,x[0]])[1],mPool=shuffle(r,MULTI).filter((x,i,arr)=>arr.findIndex(y=>mKey(y)===mKey(x))===i);let wpI=0,mI=0;
   const takeWP=n=>wpPool.slice(wpI,wpI+=n).map(x=>mc(r,x[0],x[1][0],x[1].slice(1))),takeM=n=>mPool.slice(mI,mI+=n).map(x=>mc(r,x[0],x[1][0],x[1].slice(1)));
   const wp=takeWP(4),mm=takeM(2);
-  P.push({name:"Word Builders 🧱",intro:"Prefixes go in front. Suffixes go at the end. Roots are the middle! Some words have two meanings, too.",qs:shuffle(r,[...wp,...mm])});
+  P.push({id:"builders",name:"Word Builders 🧱",intro:"Prefixes go in front. Suffixes go at the end. Roots are the middle! Some words have two meanings, too.",qs:shuffle(r,[...wp,...mm])});
   const ps=PASSAGES[PASSAGE_ORDER[(day-1)%PASSAGE_ORDER.length]];
-  P.push({name:"Story Time 📖",intro:"Read the whole story carefully. You can peek back at it during the questions!",passage:ps,qs:ps.q.map(q=>mc(r,`${q[0]}: ${q[1]}`,q[2][0],q[2].slice(1)))});
+  P.push({id:"story",name:"Story Time 📖",intro:"Read the whole story carefully. You can peek back at it during the questions!",passage:ps,qs:ps.q.map(q=>mc(r,`${q[0]}: ${q[1]}`,q[2][0],q[2].slice(1)))});
   const extra=Math.floor((S.min.reading-20)/5);
-  for(let e=0;e<extra;e++)P.push({name:"Bonus Word Builders ⭐",intro:"Bonus round! Show off those word skills.",qs:shuffle(r,[...takeWP(3),...takeM(2)])});
-  P.push({name:"Quick Read 🎤",intro:"Read this sentence out loud with your best expression. (Just one!)",fluency:FLUENCY[(day-1)%FLUENCY.length]});
+  for(let e=0;e<extra;e++)P.push({id:"bonus"+(e+1),bonus:1,name:"Bonus Word Builders ⭐",intro:"Bonus round! Show off those word skills.",qs:shuffle(r,[...takeWP(3),...takeM(2)])});
+  P.push({id:"quickread",name:"Quick Read 🎤",intro:"Read this sentence out loud with your best expression. (Just one!)",fluency:FLUENCY[(day-1)%FLUENCY.length]});
   return P}
 // ---------- math ----------
 const FX=[0,1,2,3,4,5,10],DV=[1,2,3,4,5,10];
@@ -90,24 +91,25 @@ function wordQ(r,k){const n=pickOne(r,NAMES);
   if(k===2){const g=ri(r,2,5),each=ri(r,2,Math.min(10,Math.floor(50/g)));return num(`${g*each} campers split into ${g} equal teams. How many campers are on each team?`,each)}
   const a=ri(r,236,580),b=ri(r,175,390);return num(`A train carried ${a} people in the morning and ${b} in the afternoon. How many people rode in all?`,a+b)}
 function mathParts(day,att){const r=rng(day*104729+att*15485863+7),P=[];
-  P.push({name:"Fact Mix ⚡",intro:"Adding, subtracting, and simple times and sharing facts. Take your time and think!",qs:Array.from({length:12},()=>factQ(r))});
-  P.push({name:"Regroup Rally 🔁",intro:"Carry and borrow like a pro. Work it out on paper if you like!",qs:shuffle(r,[0,1,2,3,4,5,2,5].map(k=>regroupQ(r,k)))});
-  P.push({name:"Equal Groups 🍎",intro:"Make equal groups and share them out. Draw them if it helps!",qs:[0,1,0,1,0,1].map(k=>multQ(r,k))});
-  P.push({name:"Step-by-Step Puzzles 🧩",intro:"Solve each puzzle one step at a time.",process:shuffle(r,[0,1,2,3]).slice(0,3).map(k=>processQ(r,k))});
-  P.push({name:"Place Value Castle 🏰",intro:"Thousands, hundreds, tens, and ones!",qs:shuffle(r,[0,1,2,3,4]).map(k=>placeQ(r,k))});
-  P.push({name:"Measure & Shapes 📐",intro:"Measure it, time it, shape it!",qs:shuffle(r,[...shuffle(r,[0,1,2,3,4]).slice(0,3).map(k=>measureQ(r,k)),...geoQs(r).slice(0,3)])});
-  P.push({name:"Story Problems 🐸",intro:"Read carefully. Which operation do you need?",qs:shuffle(r,[0,1,2,3]).map(k=>wordQ(r,k))});
-  const extra=Math.floor((S.min.math-20)/5);for(let e=0;e<extra;e++)P.push({name:"Bonus Fact Mix ⭐",intro:"Bonus facts! No rush.",qs:Array.from({length:10},()=>factQ(r))});
+  P.push({id:"facts",name:"Fact Mix ⚡",intro:"Adding, subtracting, and simple times and sharing facts. Take your time and think!",qs:Array.from({length:12},()=>factQ(r))});
+  P.push({id:"regroup",name:"Regroup Rally 🔁",intro:"Carry and borrow like a pro. Work it out on paper if you like!",qs:shuffle(r,[0,1,2,3,4,5,2,5].map(k=>regroupQ(r,k)))});
+  P.push({id:"groups",name:"Equal Groups 🍎",intro:"Make equal groups and share them out. Draw them if it helps!",qs:[0,1,0,1,0,1].map(k=>multQ(r,k))});
+  P.push({id:"puzzles",name:"Step-by-Step Puzzles 🧩",intro:"Solve each puzzle one step at a time.",process:shuffle(r,[0,1,2,3]).slice(0,3).map(k=>processQ(r,k))});
+  P.push({id:"place",name:"Place Value Castle 🏰",intro:"Thousands, hundreds, tens, and ones!",qs:shuffle(r,[0,1,2,3,4]).map(k=>placeQ(r,k))});
+  P.push({id:"measure",name:"Measure & Shapes 📐",intro:"Measure it, time it, shape it!",qs:shuffle(r,[...shuffle(r,[0,1,2,3,4]).slice(0,3).map(k=>measureQ(r,k)),...geoQs(r).slice(0,3)])});
+  P.push({id:"story",name:"Story Problems 🐸",intro:"Read carefully. Which operation do you need?",qs:shuffle(r,[0,1,2,3]).map(k=>wordQ(r,k))});
+  const extra=Math.floor((S.min.math-20)/5);for(let e=0;e<extra;e++)P.push({id:"bonus"+(e+1),bonus:1,name:"Bonus Fact Mix ⭐",intro:"Bonus facts! No rush.",qs:Array.from({length:10},()=>factQ(r))});
   return P}
 function parts(day,subj,att=0){return subj==="reading"?readingParts(day,att):mathParts(day,att)}
 function flatQs(P){if(P.process){const qs=[];P.process.forEach((pr,pi)=>pr.steps.forEach((st,si)=>qs.push({...st,ctx:pr.q,step:`Puzzle ${pi+1} of ${P.process.length} · step ${si+1} of ${pr.steps.length}`})));return qs}return P.qs||[]}
 // ---------- progress ----------
-const key=(d,s)=>d+"-"+s;
-const doneList=(d,s)=>S.done[key(d,s)]||[];
-const blockDone=(d,s)=>doneList(d,s).length>=parts(d,s).length;
+// Progress is worked out from completion records, so it can't drift out of sync.
+const isDone=(d,s,id)=>!!S.comp[STORE.pid(d,s,id)];
+const blockDone=(d,s)=>STORE.REQ[s].every(id=>isDone(d,s,id));
 const dayDone=d=>blockDone(d,"reading")&&blockDone(d,"math");
-const isUnlocked=d=>d>=1&&d<=S.unlocked;
-function markPart(d,s,i){const l=doneList(d,s);if(!l.includes(i))l.push(i);S.done[key(d,s)]=l;if(dayDone(d)&&d===S.unlocked&&d<DAYS){S.unlocked=d+1}if(dayDone(d)&&!S.badges.includes("Day "+d+" Champ"))S.badges.push("Day "+d+" Champ");save()}
+function unlockedThrough(){let u=Math.min(DAYS,Math.max(1,S.ovr||1));for(let d=1;d<=DAYS;d++)if(d<=u&&dayDone(d))u=Math.min(DAYS,Math.max(u,d+1));return u}
+const isUnlocked=d=>d>=1&&d<=unlockedThrough();
+function markPart(d,s,id,r,n){S.comp[STORE.pid(d,s,id)]={t:Date.now(),r,n};if(S.cur&&S.cur.pid===STORE.pid(d,s,id))delete S.cur;if(dayDone(d)&&!S.badges.includes("Day "+d+" Champ"))S.badges.push("Day "+d+" Champ");save()}
 // ---------- grading (pure, tested) ----------
 function grade(q,response){if(q.ch)return Number(response)===q.a;const v=String(response).trim();if(!/^\d+$/.test(v))return false;return Number(v)===q.num}
 // ---------- UI ----------
@@ -119,19 +121,24 @@ const rnd=a=>a[Math.floor(Math.random()*a.length)];
 function h(html){app().innerHTML=html;window.scrollTo(0,0)}
 function home(){if(!S.hash)return setupPin();
   let g="";for(let d=1;d<=DAYS;d++){const u=isUnlocked(d),dn=dayDone(d);g+=`<button class="day ${dn?"done":""}" ${u?"":"disabled"} data-day="${d}" aria-label="Day ${d}">${dn?"✅":u?"⭐":"🔒"}<br>Day ${d}</button>`}
-  h(`<h1>Study Buddy 🐙</h1><p class="big">⭐ ${S.stars} stars &nbsp;·&nbsp; 🏅 ${S.badges.length} badges</p><div class="grid">${g}</div><button class="small gear" id="pbtn">⚙️ Grown-up / Settings 🔐</button>`);
+  h(`<h1>Study Buddy 🐙</h1><p class="big">⭐ ${S.stars} stars &nbsp;·&nbsp; 🏅 ${S.badges.length} badges</p><div class="grid">${g}</div>${noteHTML()}<button class="small gear" id="pbtn">⚙️ Grown-up / Settings 🔐</button>`);
+  const nb=$("#noteok");if(nb)nb.onclick=()=>{S.note=1;save();home()};
   $$(".day:not([disabled])").forEach(b=>b.onclick=()=>dayView(+b.dataset.day));$("#pbtn").onclick=()=>askPin(settingsArea)}
+const standalone=()=>navigator.standalone===true||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
+function noteHTML(){return S.note?"":`<div class="card note" id="note"><b>📌 Note for a grown-up</b><p>${standalone()?"Great! You opened Study Buddy from the Home Screen icon. Always open it this way so progress stays saved.":"Please open Study Buddy from its Home Screen icon, not from Safari. Each one keeps its own progress."} A backup code is in Grown-up / Settings.</p><button class="small" id="noteok">Got it</button></div>`}
 function dayView(d){if(!isUnlocked(d))return home();
-  const blk=s=>{const p=parts(d,s),dl=doneList(d,s);return `<div class="card"><h2>${s==="reading"?"📚 Reading":"🔢 Math"} <small>(about ${S.min[s]} min)</small></h2>${p.map((x,i)=>{const dn=dl.includes(i),open=dn||i===0||dl.includes(i-1);return `<button class="part ${dn?"done":""}" data-s="${s}" data-i="${i}" ${open?"":"disabled"}>${dn?"✅ ":open?"":"🔒 "}${x.name}</button>`}).join("")}</div>`};
+  const blk=s=>{const p=parts(d,s);return `<div class="card"><h2>${s==="reading"?"📚 Reading":"🔢 Math"} <small>(about ${S.min[s]} min)</small></h2>${p.map((x,i)=>{const dn=isDone(d,s,x.id),open=dn||i===0||isDone(d,s,p[i-1].id);return `<button class="part ${dn?"done":""}" data-s="${s}" data-i="${i}" ${open?"":"disabled"}>${dn?"✅ ":open?"":"🔒 "}${x.name}</button>`}).join("")}</div>`};
   h(`<button class="small" id="back">⬅ Home</button><h1>Day ${d}</h1>${blk("reading")}${blk("math")}${dayDone(d)?`<p class="big">🎉 Day ${d} complete!${d<DAYS?" Day "+(d+1)+" is unlocked!":" You finished them all!"}</p>`:""}`);
   $("#back").onclick=home;$$(".part:not([disabled])").forEach(b=>b.onclick=()=>runPart(d,b.dataset.s,+b.dataset.i,0))}
 let CUR=null; // current question (used by automated tests)
-function runPart(d,s,i,att){const P=parts(d,s,att)[i],qs=flatQs(P);let idx=0,right=0;
+function runPart(d,s,i,att){const P=parts(d,s,att)[i],qs=flatQs(P),id=STORE.pid(d,s,P.id);let idx=0,right=0;
+  const resume=S.cur&&S.cur.pid===id&&S.cur.att===att&&S.cur.idx>0&&S.cur.idx<qs.length?S.cur:null;
   const intro=()=>{let x=`<button class="small" id="back">⬅ Back</button><h1>${P.name}</h1><p class="big">${P.intro}</p>`;
     if(P.learn)x+=P.learn.map(w=>`<div class="card word"><b class="big">${w[0]}</b><br>Means: ${w[2]}<br>Same: <i>${w[3]}</i> · Opposite: <i>${w[4]}</i><br><small>“${w[5].replace("___",w[0])}”</small></div>`).join("");
     if(P.passage)x+=`<div class="card passage"><h2>${P.passage.t}</h2>${P.passage.p.map(t=>`<p>${esc(t)}</p>`).join("")}</div>`;
-    x+=P.fluency?`<div class="card passage"><p class="huge">${P.fluency}</p></div><button class="go" id="fl">I read it! 🎤</button>`:`<button class="go" id="start">Let's go! ▶️</button>`;
-    h(x);$("#back").onclick=()=>dayView(d);if(P.fluency)$("#fl").onclick=()=>finish(1,1);else $("#start").onclick=ask};
+    x+=P.fluency?`<div class="card passage"><p class="huge">${P.fluency}</p></div><button class="go" id="fl">I read it! 🎤</button>`:(resume?`<button class="go" id="resume">Keep going from question ${resume.idx+1} ▶️</button><button class="small" id="start">Start over</button>`:`<button class="go" id="start">Let's go! ▶️</button>`);
+    h(x);$("#back").onclick=()=>dayView(d);if(P.fluency)$("#fl").onclick=()=>finish(1,1);else{$("#start").onclick=()=>{idx=0;right=0;ask()};if(resume)$("#resume").onclick=()=>{idx=resume.idx;right=resume.right;ask()}}};
+  const saveSpot=()=>{S.cur={pid:id,att,idx,right};save()};
   const ask=()=>{if(idx>=qs.length)return finish(right,qs.length);const q=CUR=qs[idx];let done=false,tries=0;const maxT=q.ch?Math.min(3,q.ch.length-1):3;
     let x=`<div class="top"><span>Question ${idx+1} of ${qs.length}</span><span id="score" title="Right on the first try">✅ ${right}</span></div>`;
     if(P.passage)x+=`<details class="card"><summary>📖 Peek at the story</summary>${P.passage.p.map(t=>`<p>${esc(t)}</p>`).join("")}</details>`;
@@ -144,17 +151,18 @@ function runPart(d,s,i,att){const P=parts(d,s,att)[i],qs=flatQs(P);let idx=0,rig
     const respond=(resp,btn)=>{if(done)return;const ok=grade(q,resp);tries++;const fb=$("#fb");
       if(ok){done=true;if(tries===1)right++;$("#score").textContent="✅ "+right;$$("button.ans,button.key").forEach(b=>b.disabled=true);
         if(btn)btn.classList.add("correct");else $("#inp").classList.add("correct");fb.className="fb right";
-        fb.innerHTML=`<p class="big">${tries===1?rnd(PRAISE):"You figured it out! Great job sticking with it! 💪"}</p>`;setTimeout(()=>{idx++;ask()},900);return}
+        fb.innerHTML=`<p class="big">${tries===1?rnd(PRAISE):"You figured it out! Great job sticking with it! 💪"}</p>`;idx++;saveSpot();setTimeout(ask,900);return}
       $$("button.ans,button.key").forEach(b=>b.disabled=true);if(btn)btn.classList.add("wrong");else $("#inp").classList.add("wrong");fb.className="fb wrong";
       if(tries<maxT){fb.innerHTML=`<p class="big">${rnd(KIND)}</p>${tipsHTML()}<button class="go" id="ta">Try again 🔁</button>`;
         $("#ta").onclick=()=>{fb.className="fb";fb.innerHTML="";$$("button.ans").forEach(b=>{if(!b.classList.contains("wrong"))b.disabled=false});$$("button.key").forEach(b=>b.disabled=false);const i=$("#inp");if(i){i.value="";i.classList.remove("wrong")}}}
       else{done=true;fb.innerHTML=`<p class="big">${rnd(MOVEON)}</p><p>Want to see how to work it out? It's always okay to ask a grown-up or teacher for help, too.</p><button class="small" id="ot">💡 Open Tips</button><button class="small" id="os">✏️ Scratch Paper</button><button class="go" id="nx">Next ➡️</button>`;
-        $("#ot").onclick=()=>{padOpen(qText,q);tipsShow()};$("#os").onclick=()=>padOpen(qText,q);$("#nx").onclick=()=>{idx++;ask()}}};
+        $("#ot").onclick=()=>{padOpen(qText,q);tipsShow()};$("#os").onclick=()=>padOpen(qText,q);idx++;saveSpot();$("#nx").onclick=ask}};
     if(q.ch)$$(".ans").forEach(b=>b.onclick=()=>respond(b.dataset.k,b));
     else{const inp=$("#inp");$$(".key").forEach(b=>b.onclick=()=>{const k=b.dataset.key;if(k==="⌫")inp.value=inp.value.slice(0,-1);else if(k==="✔"){if(inp.value!=="")respond(inp.value)}else if(inp.value.length<6)inp.value+=k})}};
   const finish=(r,n)=>{CUR=null;padReset();const pct=n?r/n:0;
-    if(pct>=PASS){const st=pct===1?3:pct>=.9?2:1;S.stars+=st;markPart(d,s,i);reward(st,d,s,r,n)}
-    else{h(`<h1 class="retry">${RETRY[att%RETRY.length]}</h1><p class="big" id="result">You got ${r} of ${n} right on the first try. You need ${Math.ceil(n*PASS-1e-9)} to pass. Mistakes help you learn, so let's practice again!</p><button class="go" id="retry">Try again 🔁</button><button class="small" id="back">⬅ Back</button>`);$("#retry").onclick=()=>runPart(d,s,i,att+1);$("#back").onclick=()=>dayView(d)}};
+    if(pct>=PASS){const st=pct===1?3:pct>=.9?2:1;S.stars+=st;markPart(d,s,P.id,r,n);reward(st,d,s,r,n)}
+    else{if(S.cur&&S.cur.pid===id){delete S.cur;save()}
+      h(`<h1 class="retry">${RETRY[att%RETRY.length]}</h1><p class="big" id="result">You got ${r} of ${n} right on the first try. You need ${Math.ceil(n*PASS-1e-9)} to pass. Mistakes help you learn, so let's practice again!</p><button class="go" id="retry">Try again 🔁</button><button class="small" id="back">⬅ Back</button>`);$("#retry").onclick=()=>runPart(d,s,i,att+1);$("#back").onclick=()=>dayView(d)}};
   intro()}
 function reward(st,d,s,r,n){const g=Math.floor(Math.random()*3);let game="",wire=()=>{};
   if(g===0){const R=rnd(RIDDLES);game=`<div class="card"><h2>🤔 Riddle time!</h2><p class="big">${R[0]}</p><button class="ans" id="rv">Show the answer</button><p id="ra" class="big"></p></div>`;wire=()=>$("#rv").onclick=()=>$("#ra").textContent=R[1]}
@@ -203,18 +211,23 @@ function askPin(next){h(`<h1>Settings (passcode) 🔐</h1><p>For a grown-up or t
   $("#cancel").onclick=home;$("#ok").onclick=async()=>{if(await hash($("#pin").value)===S.hash)next();else{$("#pe").textContent="That passcode isn't right.";$("#pin").value=""}}}
 function settingsArea(){
   h(`<h1>⚙️ Grown-up / Settings</h1><p>Choose how the learner practices on this device.</p><div class="card"><h2>Minutes per subject</h2>${["reading","math"].map(s=>`<label>${s[0].toUpperCase()+s.slice(1)}: <select id="m-${s}">${[20,25,30].map(m=>`<option value="${m}" ${S.min[s]==m?"selected":""}>${m} minutes</option>`).join("")}</select></label>`).join("")}<p><small>25 or 30 minutes adds bonus parts to blocks.</small></p><button class="small" id="sm">Save minutes</button></div>
-  <div class="card"><h2>Progress</h2><p>Unlocked through Day ${S.unlocked} of ${DAYS}. Stars: ${S.stars}.</p><label>Unlock through day: <input id="ud" type="number" min="1" max="${DAYS}" value="${Math.min(S.unlocked+1,DAYS)}"></label><button class="small" id="ub">Unlock</button><button class="small danger" id="rs">Reset all progress</button></div>
+  <div class="card"><h2>Progress</h2><p>Unlocked through Day ${unlockedThrough()} of ${DAYS}. Days finished: ${Array.from({length:DAYS},(_,i)=>i+1).filter(dayDone).length}. Stars: ${S.stars}.</p><p><small>Days unlock on their own when the day before is finished. You can also unlock days by hand here.</small></p><label>Unlock through day: <input id="ud" type="number" min="1" max="${DAYS}" value="${Math.min(unlockedThrough()+1,DAYS)}"></label><button class="small" id="ub">Unlock</button><button class="small danger" id="rs">Reset all progress</button></div>
+  <div class="card"><h2>Backup code</h2><p><small>Progress is saved on this device after every answer. To be extra safe, copy this code and keep it somewhere (a note or a photo). Paste it here later to bring progress back, even on a new phone. It holds progress only, not the passcode or any personal info.</small></p><textarea id="bk" rows="4" readonly aria-label="Backup code">${STORE.exportCode(S)}</textarea><button class="small" id="bkc">📋 Copy backup code</button><textarea id="rsin" rows="3" placeholder="Paste a backup code here" aria-label="Paste a backup code"></textarea><button class="small" id="rsb">Restore from code</button></div>
   <div class="card"><h2>Change passcode</h2><form><input id="np" type="password" inputmode="numeric" maxlength="6" placeholder="New 4–6 digits" autocomplete="off"></form><button class="small" id="cp">Change passcode</button></div>
   <button class="small" id="help">📱 iPhone setup help</button><button class="small" id="home">⬅ Done</button><p id="msg" class="big"></p>`);
   const m=t=>$("#msg").textContent=t;
   $("#sm").onclick=()=>{S.min.reading=+$("#m-reading").value;S.min.math=+$("#m-math").value;save();m("Saved ✔")};
-  $("#ub").onclick=()=>{const n=Math.max(1,Math.min(DAYS,Math.floor(+$("#ud").value)||1));S.unlocked=Math.max(S.unlocked,n);save();settingsArea();$("#msg").textContent="Unlocked through Day "+S.unlocked+" ✔"};
-  $("#rs").onclick=()=>{if(confirm("Erase all progress? (The passcode stays.)")){S.done={};S.unlocked=1;S.stars=0;S.badges=[];save();m("Progress reset.")}};
+  $("#ub").onclick=()=>{const n=Math.max(1,Math.min(DAYS,Math.floor(+$("#ud").value)||1));S.ovr=Math.max(S.ovr||1,n);save();settingsArea();$("#msg").textContent="Unlocked through Day "+unlockedThrough()+" ✔"};
+  $("#rs").onclick=()=>{if(confirm("Erase all progress? (The passcode stays.)")){S.comp={};S.ovr=1;S.stars=0;S.badges=[];S.sk={};delete S.cur;save();settingsArea();$("#msg").textContent="Progress reset."}};
+  $("#bkc").onclick=async()=>{const t=$("#bk");t.select();try{await navigator.clipboard.writeText(t.value);m("Copied ✔")}catch(e){try{document.execCommand("copy");m("Copied ✔")}catch(_){m("Select the code and copy it.")}}};
+  $("#rsb").onclick=()=>{const N=STORE.importCode($("#rsin").value,S);if(!N)return m("That code doesn't look right. Check it and try again.");if(!confirm("Replace progress on this device with the backup?"))return;S=N;save();settingsArea();$("#msg").textContent="Progress restored ✔"};
   $("#cp").onclick=async()=>{const v=$("#np").value;if(!/^\d{4,6}$/.test(v))return m("Please use 4–6 digits.");S.hash=await hash(v);save();m("Passcode changed ✔")};
   $("#help").onclick=help;$("#home").onclick=home}
 function help(){h(`<h1>iPhone setup help</h1><div class="card"><h2>1. Add to Home Screen</h2><ol><li>Open the app's web address in <b>Safari</b>.</li><li>Tap the <b>Share</b> button (the square with an arrow).</li><li>Tap <b>Add to Home Screen</b>, then <b>Add</b>.</li><li>Open it once from the Home Screen while online so it saves itself for offline use.</li></ol></div>
 <div class="card"><h2>2. Lock the phone to this app (Guided Access)</h2><ol><li>Open <b>Settings</b>.</li><li>Tap <b>Accessibility</b>.</li><li>Scroll down and tap <b>Guided Access</b>.</li><li>Turn <b>Guided Access</b> on.</li><li>Tap <b>Passcode Settings</b> → <b>Set Guided Access Passcode</b>, and enter a passcode (you can also turn on Face ID or Touch ID).</li><li>Optional: set a <b>Time Limit</b>.</li><li>Open <b>Study Buddy</b> from the Home Screen.</li><li><b>Triple-click the side button</b> (or the Home button on older iPhones), then tap <b>Start</b>.</li><li>To end: triple-click again, enter the Guided Access passcode, and tap <b>End</b>.</li></ol></div>
-<div class="card"><h2>Privacy</h2><p>No accounts, ads, trackers, or internet use after install. The learner's progress stays on this phone. Clearing Safari website data erases progress and the passcode.</p></div><button class="small" id="b">⬅ Back</button>`);$("#b").onclick=settingsArea}
+<div class="card"><h2>Privacy</h2><p>No accounts, ads, trackers, or internet use after install. The learner's progress stays on this phone, saved after every answer.</p><p><b>Keep progress safe:</b> always open Study Buddy from its Home Screen icon. The icon and a Safari tab keep <b>separate</b> progress. Deleting the icon or clearing Safari website data erases progress, so keep a backup code (Grown-up / Settings).</p></div><button class="small" id="b">⬅ Back</button>`);$("#b").onclick=settingsArea}
 if("serviceWorker" in navigator&&location.protocol!=="file:")navigator.serviceWorker.register("service-worker.js").catch(()=>{});
 document.addEventListener("submit",e=>e.preventDefault());
 home();
+STORE.persist();
+STORE.recover(S).then(M=>{if(!M)return;S=M;save();if(!$("#pin")&&!CUR)home()});
