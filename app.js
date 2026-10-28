@@ -30,19 +30,19 @@ const related=(a,b)=>FAMILIES.some(f=>f.includes(a[0])&&f.includes(b[0]));
 function readingParts(day,att){
   const r=rng(day*9973+att*7919+11),words=vocabForDay(r,day),others=VOCAB.filter(v=>!words.includes(v)),P=[];
   const meanings=w=>shuffle(r,others.filter(o=>!related(w,o))).map(o=>o[2]).filter(m=>m!==w[2]);
-  P.push({id:"words",name:"Word Wizards 🪄",intro:"Meet your new words! Read each card, then tap the best answer.",learn:words,
+  P.push({id:"words",name:"Word Wizards 🪄",intro:"Meet your new words! Read each card. Then tap the best answer.",learn:words,
     qs:shuffle(r,[...words.map(w=>mc(r,`What does “${w[0]}” mean?`,w[2],meanings(w))),...words.slice(0,2).map(w=>mc(r,`Context clue! Which word fits?\n“${w[5]}”`,w[0],shuffle(r,others.filter(o=>pos(w)==="v"?pos(o)==="a":pos(o)==="v")).map(o=>o[0])))])});
-  P.push({id:"sameopp",name:"Same & Opposite 🔄",intro:"Synonym = SAME meaning. Antonym = OPPOSITE meaning.",
+  P.push({id:"sameopp",name:"Same & Opposite 🔄",intro:"A synonym means the SAME. An antonym means the OPPOSITE.",
     qs:shuffle(r,words.flatMap(w=>{const so=shuffle(r,others.filter(o=>!related(w,o)));return[mc(r,`Which word is a SYNONYM (same) for “${w[0]}”?`,w[3],[w[4],...so.map(o=>o[4])].filter(x=>x!==w[3])),mc(r,`Which word is an ANTONYM (opposite) of “${w[0]}”?`,w[4],[w[3],...so.map(o=>o[3])].filter(x=>x!==w[4]))]})).slice(0,6)});
   const wpPool=shuffle(r,WORDPARTS),mKey=x=>(x[0].match(/Here, (\w+) means/)||[,x[0]])[1],mPool=shuffle(r,MULTI).filter((x,i,arr)=>arr.findIndex(y=>mKey(y)===mKey(x))===i);let wpI=0,mI=0;
   const takeWP=n=>wpPool.slice(wpI,wpI+=n).map(x=>mc(r,x[0],x[1][0],x[1].slice(1))),takeM=n=>mPool.slice(mI,mI+=n).map(x=>mc(r,x[0],x[1][0],x[1].slice(1)));
   const wp=takeWP(4),mm=takeM(2);
-  P.push({id:"builders",name:"Word Builders 🧱",intro:"Prefixes go in front. Suffixes go at the end. Roots are the middle! Some words have two meanings, too.",qs:shuffle(r,[...wp,...mm])});
+  P.push({id:"builders",name:"Word Builders 🧱",intro:"Prefixes go in front. Suffixes go at the end. Roots are in the middle! Some words have two meanings.",qs:shuffle(r,[...wp,...mm])});
   const ps=PASSAGES[PASSAGE_ORDER[(day-1)%PASSAGE_ORDER.length]];
-  P.push({id:"story",name:"Story Time 📖",intro:"Read the whole story carefully. You can peek back at it during the questions!",passage:ps,qs:ps.q.map(q=>mc(r,`${q[0]}: ${q[1]}`,q[2][0],q[2].slice(1)))});
+  P.push({id:"story",name:"Story Time 📖",intro:"Read the whole story. Go slow. You can peek back at it later!",passage:ps,qs:ps.q.map(q=>mc(r,`${q[0]}: ${q[1]}`,q[2][0],q[2].slice(1)))});
   const extra=Math.floor((S.min.reading-20)/5);
   for(let e=0;e<extra;e++)P.push({id:"bonus"+(e+1),bonus:1,name:"Bonus Word Builders ⭐",intro:"Bonus round! Show off those word skills.",qs:shuffle(r,[...takeWP(3),...takeM(2)])});
-  P.push({id:"quickread",name:"Quick Read 🎤",intro:"Read this sentence out loud with your best expression. (Just one!)",fluency:FLUENCY[(day-1)%FLUENCY.length]});
+  P.push({id:"quickread",name:"Quick Read 🎤",intro:"Read this out loud. Make your voice fit the words. Just one time!",fluency:FLUENCY[(day-1)%FLUENCY.length]});
   return P}
 // ---------- math ----------
 const FX=[0,1,2,3,4,5,10],DV=[1,2,3,4,5,10];
@@ -91,13 +91,13 @@ function wordQ(r,k){const n=pickOne(r,NAMES);
   if(k===2){const g=ri(r,2,5),each=ri(r,2,Math.min(10,Math.floor(50/g)));return num(`${g*each} campers split into ${g} equal teams. How many campers are on each team?`,each)}
   const a=ri(r,236,580),b=ri(r,175,390);return num(`A train carried ${a} people in the morning and ${b} in the afternoon. How many people rode in all?`,a+b)}
 function mathParts(day,att){const r=rng(day*104729+att*15485863+7),P=[];
-  P.push({id:"facts",name:"Fact Mix ⚡",intro:"Adding, subtracting, and simple times and sharing facts. Take your time and think!",qs:Array.from({length:12},()=>factQ(r))});
-  P.push({id:"regroup",name:"Regroup Rally 🔁",intro:"Carry and borrow like a pro. Work it out on paper if you like!",qs:shuffle(r,[0,1,2,3,4,5,2,5].map(k=>regroupQ(r,k)))});
+  P.push({id:"facts",name:"Fact Mix ⚡",intro:"Add, take away, times, and share. Take your time and think!",qs:Array.from({length:12},()=>factQ(r))});
+  P.push({id:"regroup",name:"Regroup Rally 🔁",intro:"Carry and borrow like a pro. Use paper if you like!",qs:shuffle(r,[0,1,2,3,4,5,2,5].map(k=>regroupQ(r,k)))});
   P.push({id:"groups",name:"Equal Groups 🍎",intro:"Make equal groups and share them out. Draw them if it helps!",qs:[0,1,0,1,0,1].map(k=>multQ(r,k))});
   P.push({id:"puzzles",name:"Step-by-Step Puzzles 🧩",intro:"Solve each puzzle one step at a time.",process:shuffle(r,[0,1,2,3]).slice(0,3).map(k=>processQ(r,k))});
   P.push({id:"place",name:"Place Value Castle 🏰",intro:"Thousands, hundreds, tens, and ones!",qs:shuffle(r,[0,1,2,3,4]).map(k=>placeQ(r,k))});
   P.push({id:"measure",name:"Measure & Shapes 📐",intro:"Measure it, time it, shape it!",qs:shuffle(r,[...shuffle(r,[0,1,2,3,4]).slice(0,3).map(k=>measureQ(r,k)),...geoQs(r).slice(0,3)])});
-  P.push({id:"story",name:"Story Problems 🐸",intro:"Read carefully. Which operation do you need?",qs:shuffle(r,[0,1,2,3]).map(k=>wordQ(r,k))});
+  P.push({id:"story",name:"Story Problems 🐸",intro:"Read each story slowly. Do you add, take away, times, or share?",qs:shuffle(r,[0,1,2,3]).map(k=>wordQ(r,k))});
   const extra=Math.floor((S.min.math-20)/5);for(let e=0;e<extra;e++)P.push({id:"bonus"+(e+1),bonus:1,name:"Bonus Fact Mix ⭐",intro:"Bonus facts! No rush.",qs:Array.from({length:10},()=>factQ(r))});
   return P}
 function parts(day,subj,att=0){return subj==="reading"?readingParts(day,att):mathParts(day,att)}
@@ -113,10 +113,10 @@ function markPart(d,s,id,r,n){S.comp[STORE.pid(d,s,id)]={t:Date.now(),r,n};if(S.
 // ---------- grading (pure, tested) ----------
 function grade(q,response){if(q.ch)return Number(response)===q.a;const v=String(response).trim();if(!/^\d+$/.test(v))return false;return Number(v)===q.num}
 // ---------- UI ----------
-const PRAISE=["Amazing! 🌟","You're a superstar! ⭐","Brain power! 🧠","Woo-hoo! 🎉","Fantastic! 🦄","Totally awesome! 🚀","Nailed it! 🔨","Spectacular! 🎆"];
-const KIND=["Not quite, and that's okay! Mistakes are how we learn. 🌱","Good try! Your brain grows when you work on hard things. 💛","Oops! Every mistake teaches you something. 🐢"];
-const MOVEON=["This one was tricky. That's okay! Let's keep going. You can look at it again next time. 💛","Tough one! Tricky problems help your brain grow. Let's try the next one. 🌱"];
-const RETRY=["Good effort! Let's try this part again with new questions. You've got this! 💪","So close! Practice makes progress. Ready for another go? 🌈","Nice try! Every try makes your brain stronger. Let's go again! 🧠"];
+const PRAISE=["Amazing! 🌟","You're a superstar! ⭐","Brain power! 🧠","Woo-hoo! 🎉","Super cool! 🦄","So awesome! 🚀","Nailed it! 🔨","Wow, wow, wow! 🎆"];
+const KIND=["Not quite. That's okay! Mistakes help us learn. 🌱","Good try! Hard work helps your brain grow. 💛","Oops! Every mistake teaches you something. 🐢"];
+const MOVEON=["This one was hard. That's okay! Let's keep going. You can try it again later. 💛","Tough one! Hard ones help your brain grow. Let's try the next one. 🌱"];
+const RETRY=["Good work! Let's try this part again. You will get new questions. You've got this! 💪","So close! Practice makes progress. Ready for another go? 🌈","Nice try! Every try makes your brain stronger. Let's go again! 🧠"];
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 function h(html){app().innerHTML=html;window.scrollTo(0,0)}
 function home(){if(!S.hash)return setupPin();
@@ -175,7 +175,7 @@ function runPart(d,s,i,att,X){const P=X?X.P:parts(d,s,att)[i],skk=X?X.k:SKILL.ke
       $$("button.ans,button.key").forEach(b=>b.disabled=true);if(btn)btn.classList.add("wrong");else $("#inp").classList.add("wrong");fb.className="fb wrong";
       if(tries<maxT){fb.innerHTML=`<p class="big">${rnd(KIND)}</p>${tipsHTML()}<button class="go" id="ta">Try again 🔁</button>`;wireTut();
         $("#ta").onclick=()=>{fb.className="fb";fb.innerHTML="";$$("button.ans").forEach(b=>{if(!b.classList.contains("wrong"))b.disabled=false});$$("button.key").forEach(b=>b.disabled=false);const i=$("#inp");if(i){i.value="";i.classList.remove("wrong")}}}
-      else{done=true;fb.innerHTML=`<p class="big">${rnd(MOVEON)}</p><p>Want to see how to work it out? It's always okay to ask a grown-up or teacher for help, too.</p><button class="small" id="ot">💡 Open Tips</button><button class="small" id="os">✏️ Scratch Paper</button>${canTut?TUTBTN:""}<button class="go" id="nx">Next ➡️</button>`;wireTut();
+      else{done=true;fb.innerHTML=`<p class="big">${rnd(MOVEON)}</p><p>Want to see how to do it? You can always ask a grown-up for help.</p><button class="small" id="ot">💡 Open Tips</button><button class="small" id="os">✏️ Scratch Paper</button>${canTut?TUTBTN:""}<button class="go" id="nx">Next ➡️</button>`;wireTut();
         $("#ot").onclick=()=>{padOpen(qText,q);tipsShow()};$("#os").onclick=()=>padOpen(qText,q);idx++;saveSpot();$("#nx").onclick=ask}};
     if(q.ch)$$(".ans").forEach(b=>b.onclick=()=>respond(b.dataset.k,b));
     else{const inp=$("#inp");$$(".key").forEach(b=>b.onclick=()=>{const k=b.dataset.key;if(k==="⌫")inp.value=inp.value.slice(0,-1);else if(k==="✔"){if(inp.value!=="")respond(inp.value)}else if(inp.value.length<6)inp.value+=k})}};
